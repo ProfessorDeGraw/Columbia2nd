@@ -22,7 +22,39 @@ import com.sleepycat.je.Environment;
 import com.sleepycat.je.EnvironmentConfig;
 import com.sleepycat.je.EnvironmentLockedException;
 
-public class KeyValueDatabase implements TransactionWorker {
+class KeyValueDatabaseReader implements TransactionWorker {
+
+	KeyValueDatabase db;
+	
+	KeyValueDatabaseReader(KeyValueDatabase myDb) {
+		db = myDb;
+	}
+	
+	@Override
+	public void doWork() throws Exception {
+		// TODO Auto-generated method stub
+		db.readAllKeys();
+	}
+	
+}
+
+class KeyValueDatabaseWriter implements TransactionWorker {
+
+	KeyValueDatabase db;
+	
+	KeyValueDatabaseWriter(KeyValueDatabase myDb) {
+		db = myDb;
+	}
+	
+	@Override
+	public void doWork() throws Exception {
+		// TODO Auto-generated method stub
+		db.writeManyKeysFromFile("/tmp/occurrence.txt");
+	}
+	
+}
+
+public class KeyValueDatabase {
 	
 	private static boolean create = true;
 	
@@ -55,19 +87,15 @@ public class KeyValueDatabase implements TransactionWorker {
 			try {
 				this.setupDatabase(env);
 				
-				TransactionRunner runner = new TransactionRunner(env);
-				try {
-					// open and access the database within a transaction
-					runner.run(this);
-				} finally {
-					// close the database outside the transaction
-					this.close();
-				}
+				actionWriter();
+				actionReader();
 				
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
+			
+			closeDatabase();
 			
 		} catch (EnvironmentLockedException e) {
 			// TODO Auto-generated catch block
@@ -75,6 +103,60 @@ public class KeyValueDatabase implements TransactionWorker {
 		} catch (DatabaseException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+		}
+	}
+
+	public void actionWriter() {
+		TransactionRunner runner = new TransactionRunner(env);
+		try {
+			// open and access the database within a transaction
+			KeyValueDatabaseWriter writer = new KeyValueDatabaseWriter(this);
+			//KeyValueDatabaseReader reader = new KeyValueDatabaseReader(this);
+			try {
+				runner.run(writer);
+				//runner.run(reader);
+			} catch (DatabaseException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		} finally {
+			// close the database outside the transaction
+			try {
+				//this.close();
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+	}
+	
+	public void actionReader() {
+		TransactionRunner runner = new TransactionRunner(env);
+		try {
+			// open and access the database within a transaction
+			//KeyValueDatabaseWriter writer = new KeyValueDatabaseWriter(this);
+			KeyValueDatabaseReader reader = new KeyValueDatabaseReader(this);
+			try {
+				//runner.run(writer);
+				runner.run(reader);
+			} catch (DatabaseException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		} finally {
+			// close the database outside the transaction
+			try {
+				//this.close();
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 	}
 	
@@ -106,11 +188,20 @@ public class KeyValueDatabase implements TransactionWorker {
 		SerialBinding<String> dataBinding = new SerialBinding<String>(catalog,
 				String.class);
 
-		this.db = env.openDatabase(null, "helloworld", dbConfig);
+		this.db = env.openDatabase(null, "Keyvaluedatabase", dbConfig);
 
 		// create a map view of the database
 		this.map = new StoredSortedMap<String, String>(db, keyBinding,
 				dataBinding, true);
+	}
+	
+	public void closeDatabase() {
+		try {
+			this.close();
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
 	/** Closes the database. */
@@ -132,15 +223,16 @@ public class KeyValueDatabase implements TransactionWorker {
 	
 	/** Performs work within a transaction. */
 	public void doWork() {
-		writeAndRead();
+		writeManyKeysFromFile("/tmp/occurrence.txt");
+		readAllKeys();
 	}
 
 	/** Writes and reads the database via the Map. */
-	private void writeAndRead() {
+	public void writeManyKeysFromFile(String file) {
 
 		try {
 			BufferedReader reader = new BufferedReader(new FileReader(
-					"/tmp/occurrence.txt"));
+					file));
 			Pattern tab = Pattern.compile("\t");
 			String line = reader.readLine();
 			long count = 1;
@@ -185,7 +277,9 @@ public class KeyValueDatabase implements TransactionWorker {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+	}
 
+	public void readAllKeys() {
 		System.out.println("Reading data");
 		// Iterator<Map.Entry<String, String>> iter = map.tailMap("47874585:")
 		// .entrySet().iterator();
