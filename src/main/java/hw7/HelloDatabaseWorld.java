@@ -32,9 +32,15 @@ public class HelloDatabaseWorld implements TransactionWorker {
 	private ClassCatalog catalog;
 	private Database db;
 	private SortedMap<String, String> map;
+	
+	StringBuilder dbMessage;
+
+	public String getDbMessage() {
+		return dbMessage.toString();
+	}
 
 	/** Creates the environment and runs a transaction */
-	public static void main(String[] argv) throws Exception {
+	public static String main() throws Exception {
 
 		String dir = "/tmp/berkeleydb";
 
@@ -56,6 +62,8 @@ public class HelloDatabaseWorld implements TransactionWorker {
 			// close the database outside the transaction
 			worker.close();
 		}
+		
+		return worker.getDbMessage();
 	}
 
 	/** Creates the database for this application */
@@ -121,7 +129,7 @@ public class HelloDatabaseWorld implements TransactionWorker {
 
 		try {
 			BufferedReader reader = new BufferedReader(new FileReader(
-					"/Users/timrobertson/data/occurrence.txt"));
+					"/tmp/occurrence.txt"));
 			Pattern tab = Pattern.compile("\t");
 			String line = reader.readLine();
 			long count = 1;
@@ -168,13 +176,17 @@ public class HelloDatabaseWorld implements TransactionWorker {
 		}
 
 		System.out.println("Reading data");
-		Iterator<Map.Entry<String, String>> iter = map.tailMap("47874585:")
-				.entrySet().iterator();
+		// Iterator<Map.Entry<String, String>> iter = map.tailMap("47874585:")
+		// .entrySet().iterator();
+		Iterator<Map.Entry<String, String>> iter = map.entrySet().iterator();
+		dbMessage = new StringBuilder();
 		while (iter.hasNext()) {
 			Map.Entry<String, String> entry = iter.next();
-			if (!entry.getKey().startsWith("47874585:")) {
-				break;
-			}
+			// if (!entry.getKey().startsWith("47874585:")) {
+			// break;
+			// }
+			dbMessage
+					.append(entry.getKey().toString() + ' ' + entry.getValue());
 			System.out.println(entry.getKey().toString() + ' '
 					+ entry.getValue());
 		}

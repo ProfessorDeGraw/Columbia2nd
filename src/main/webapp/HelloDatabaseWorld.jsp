@@ -9,6 +9,6 @@
 		scheme you selected.</H2>
 	<H2>Have a great day!</H2>
 	<H2>The Following is a message for the database:</H2>
-	<H2>$databaseMessage</H2>
+	<H2>${databaseMessage}</H2>
 </BODY>
 </HTML>

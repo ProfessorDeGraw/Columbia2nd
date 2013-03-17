@@ -23,8 +23,17 @@ public class HelloDatabaseWorldServlet extends HttpServlet {
 
 		ColorBeanImmutable elColor = new ColorBeanImmutable(bgColor, fgColor);
 		request.setAttribute("elColor", elColor);
-
-		String databaseMessage = new String("The Database is being worked on now, try agian later.");
+		
+		String databaseMessage;
+		
+		try {
+			databaseMessage = HelloDatabaseWorld.main();
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			// e.printStackTrace();
+			
+			databaseMessage = new String("The Database is being worked on now, try agian later.");
+		}
 		request.setAttribute("databaseMessage", databaseMessage);
 		
 		String address = "HelloDatabaseWorld.jsp";
