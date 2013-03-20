@@ -5,6 +5,9 @@ import javax.servlet.*;
 import javax.servlet.annotation.*;
 import javax.servlet.http.*;
 
+import org.springframework.web.context.WebApplicationContext;
+import org.springframework.web.context.support.WebApplicationContextUtils;
+
 @WebServlet("/HelloDatabaseWorld")
 public class HelloDatabaseWorldServlet extends HttpServlet {
 	private static final long serialVersionUID = 5369735834465318258L;
@@ -27,7 +30,13 @@ public class HelloDatabaseWorldServlet extends HttpServlet {
 		String databaseMessage;
 		
 		try {
-			databaseMessage = HelloDatabaseWorld.main();
+			WebApplicationContext ctx = WebApplicationContextUtils.getRequiredWebApplicationContext(this.getServletContext());
+			KeyValueDatabase database = (KeyValueDatabase) ctx.getBean("KeyValueDatabase");
+			
+			database.actionWriter();
+			database.actionReader();
+
+			databaseMessage =  database.getDbMessage();
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			// e.printStackTrace();

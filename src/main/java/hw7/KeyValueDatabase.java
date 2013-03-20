@@ -6,12 +6,15 @@ import java.io.FileReader;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.SortedMap;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.sleepycat.bind.serial.ClassCatalog;
 import com.sleepycat.bind.serial.SerialBinding;
 import com.sleepycat.bind.serial.StoredClassCatalog;
 import com.sleepycat.bind.tuple.TupleBinding;
+import com.sleepycat.bind.tuple.TupleInput;
+import com.sleepycat.bind.tuple.TupleOutput;
 import com.sleepycat.collections.StoredSortedMap;
 import com.sleepycat.collections.TransactionRunner;
 import com.sleepycat.collections.TransactionWorker;
@@ -40,16 +43,18 @@ class KeyValueDatabaseReader implements TransactionWorker {
 
 class KeyValueDatabaseWriter implements TransactionWorker {
 
-	KeyValueDatabase db;
+	KeyValueDatabase myDb;
+	private String myDatabaseLoadFile;
 	
-	KeyValueDatabaseWriter(KeyValueDatabase myDb) {
-		db = myDb;
+	KeyValueDatabaseWriter(KeyValueDatabase db, String databaseLoadFile) {
+		myDb = db;
+		myDatabaseLoadFile = databaseLoadFile;
 	}
 	
 	@Override
 	public void doWork() throws Exception {
 		// TODO Auto-generated method stub
-		db.writeManyKeysFromFile("/tmp/occurrence.txt");
+		myDb.writeManyKeysFromFile(myDatabaseLoadFile);
 	}
 	
 }
@@ -58,19 +63,41 @@ public class KeyValueDatabase {
 	
 	private static boolean create = true;
 	
+	private boolean databaseOpen = false;
+	
 	private Environment env;
 	private ClassCatalog catalog;
 	private Database db;
-	private SortedMap<String, String> map;
+	private SortedMap<SimpleKey, String> map;
 
 	private StringBuilder dbMessage = new StringBuilder("Database is not ready.");
 	
+	private String databaseLoadFile = "/tmp/occurrence.txt";
+	private String databaseLocation = "/tmp/berkeleydb";
+	
+	public void setDatabaseLoadFile(String databaseLoadFile) {
+		this.databaseLoadFile = databaseLoadFile;
+	}
+
+	public void setDatabaseLocation(String databaseLocation) {
+		this.databaseLocation = databaseLocation;
+	}
+
 	public String getDbMessage() {
 		return dbMessage.toString();
 	}
 	
 	public void databaseCycle() {
-		String dir = "/tmp/berkeleydb";
+		openDatabase();
+		
+		actionWriter();
+		actionReader();
+		
+		closeDatabase();
+	}
+
+	private void openDatabase() {
+		//String dir = "/tmp/berkeleydb";
 
 		// environment is transactional
 		EnvironmentConfig envConfig = new EnvironmentConfig();
@@ -80,22 +107,20 @@ public class KeyValueDatabase {
 		}
 		Environment env;
 		try {
-			env = new Environment(new File(dir), envConfig);
+			env = new Environment(new File(databaseLocation), envConfig);
 			
 			// create the application and run a transaction
 			//HelloDatabaseWorld worker = new KeyValueDatabase(env);
 			try {
 				this.setupDatabase(env);
 				
-				actionWriter();
-				actionReader();
+				databaseOpen = true;
 				
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 			
-			closeDatabase();
 			
 		} catch (EnvironmentLockedException e) {
 			// TODO Auto-generated catch block
@@ -107,10 +132,14 @@ public class KeyValueDatabase {
 	}
 
 	public void actionWriter() {
+		if ( databaseOpen == false) {
+			openDatabase();
+		}
+		
 		TransactionRunner runner = new TransactionRunner(env);
 		try {
 			// open and access the database within a transaction
-			KeyValueDatabaseWriter writer = new KeyValueDatabaseWriter(this);
+			KeyValueDatabaseWriter writer = new KeyValueDatabaseWriter(this, databaseLoadFile);
 			//KeyValueDatabaseReader reader = new KeyValueDatabaseReader(this);
 			try {
 				runner.run(writer);
@@ -134,6 +163,10 @@ public class KeyValueDatabase {
 	}
 	
 	public void actionReader() {
+		if ( databaseOpen == false) {
+			openDatabase();
+		}
+		
 		TransactionRunner runner = new TransactionRunner(env);
 		try {
 			// open and access the database within a transaction
@@ -166,6 +199,45 @@ public class KeyValueDatabase {
 		open();
 	}
 	
+	private static class SimpleKeyBinding extends TupleBinding<SimpleKey> {
+
+		@Override
+		public SimpleKey entryToObject(TupleInput input) {
+			// TODO Auto-generated method stub
+			 String number = input.readString();
+			 
+			 // (*):(*)@(*)
+			Pattern pattern;
+			
+			SimpleKey k = null;
+			try {
+				pattern = Pattern.compile("(.*):(.*)@(.*)");
+				
+				Matcher matcher = pattern.matcher(number);
+				
+				 if (matcher.find()) {
+					 String p1 = matcher.group(1);
+					 String p2 = matcher.group(2);
+					 String p3 = matcher.group(3);
+					 
+					 k = new SimpleKey(p1, p2, p3);
+				 }
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			 
+	         return k;
+		}
+
+		@Override
+		public void objectToEntry(SimpleKey object, TupleOutput output) {
+			// TODO Auto-generated method stub
+			SimpleKey key = (SimpleKey) object;
+            output.writeString(key.toString());
+		}
+    }
+	
 	/** Opens the database and creates the Map. */
 	private void open() throws Exception {
 
@@ -181,8 +253,8 @@ public class KeyValueDatabase {
 		catalog = new StoredClassCatalog(catalogDb);
 
 		// use Integer tuple binding for key entries
-		TupleBinding<String> keyBinding = TupleBinding
-				.getPrimitiveBinding(String.class);
+		TupleBinding<SimpleKey> keyBinding = new SimpleKeyBinding();
+				//TupleBinding.getPrimitiveBinding(SimpleKey.class);
 
 		// use String serial binding for data entries
 		SerialBinding<String> dataBinding = new SerialBinding<String>(catalog,
@@ -191,7 +263,7 @@ public class KeyValueDatabase {
 		this.db = env.openDatabase(null, "Keyvaluedatabase", dbConfig);
 
 		// create a map view of the database
-		this.map = new StoredSortedMap<String, String>(db, keyBinding,
+		this.map = new StoredSortedMap<SimpleKey, String>(db, keyBinding,
 				dataBinding, true);
 	}
 	
@@ -244,12 +316,12 @@ public class KeyValueDatabase {
 				String parts[] = tab.split(line);
 				try {
 					// map.put(parts[0], line);
-					int i = 0;
-					for (String s : parts) {
-						map.put(parts[0] + ":" + i, s);
-						i++;
-					}
-					kvp += i;
+					//int i = 0;
+					//for (String s : parts) {
+						map.put(new SimpleKey(parts[0], parts[1]),  parts[2]);
+					//	i++;
+					//}
+					//kvp += i;
 
 				} catch (NumberFormatException e) {
 					e.printStackTrace();
@@ -283,10 +355,10 @@ public class KeyValueDatabase {
 		System.out.println("Reading data");
 		// Iterator<Map.Entry<String, String>> iter = map.tailMap("47874585:")
 		// .entrySet().iterator();
-		Iterator<Map.Entry<String, String>> iter = map.entrySet().iterator();
+		Iterator<Map.Entry<SimpleKey, String>> iter = map.entrySet().iterator();
 		dbMessage = new StringBuilder();
 		while (iter.hasNext()) {
-			Map.Entry<String, String> entry = iter.next();
+			Map.Entry<SimpleKey, String> entry = iter.next();
 			// if (!entry.getKey().startsWith("47874585:")) {
 			// break;
 			// }
