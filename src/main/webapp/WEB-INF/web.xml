@@ -6,6 +6,19 @@
          xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
          metadata-complete="false">
 
+	<servlet>
+		<display-name>helloDatabaseWorldServlet</display-name>
+		<servlet-name>HelloDatabaseWorldServlet</servlet-name>
+		<servlet-class>
+			org.springframework.web.context.support.HttpRequestHandlerServlet
+		</servlet-class>
+	</servlet>
+	
+	<servlet-mapping>
+                <servlet-name>HelloDatabaseWorldServlet</servlet-name>
+                <url-pattern>/HelloDatabaseWorldServlet</url-pattern>
+        </servlet-mapping>
+
          <servlet>
                   <servlet-name>health</servlet-name>
                   <jsp-file>/health.jsp</jsp-file>

@@ -1,18 +1,31 @@
 package hw7;
 
 import java.io.*;
+
 import javax.servlet.*;
 import javax.servlet.annotation.*;
 import javax.servlet.http.*;
 
+import org.springframework.stereotype.Component;
+import org.springframework.web.HttpRequestHandler;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
-@WebServlet("/HelloDatabaseWorld")
-public class HelloDatabaseWorldServlet extends HttpServlet {
+//@WebServlet("/HelloDatabaseWorld")
+//@WebServlet(description = "Http Servlet using pure java / annotations", urlPatterns = { "/HelloDatabaseWorld" }, name = "HelloDatabaseWorldServlet")
+public class HelloDatabaseWorldServlet implements HttpRequestHandler {
+//public class HelloDatabaseWorldServlet extends HttpServlet implements HttpRequestHandler {
 	private static final long serialVersionUID = 5369735834465318258L;
+	
+	KeyValueDatabase database=null;
+	
+	
 
-	@Override
+	public void setDatabase(KeyValueDatabase database) {
+		this.database = database;
+	}
+
+//	@Override
 	public void doGet(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
 		String bgColor = request.getParameter("bgColor");
@@ -30,8 +43,11 @@ public class HelloDatabaseWorldServlet extends HttpServlet {
 		String databaseMessage;
 		
 		try {
-			WebApplicationContext ctx = WebApplicationContextUtils.getRequiredWebApplicationContext(this.getServletContext());
-			KeyValueDatabase database = (KeyValueDatabase) ctx.getBean("KeyValueDatabase");
+			if (database == null) {
+			//WebApplicationContext ctx = WebApplicationContextUtils.getRequiredWebApplicationContext(this.getServletContext());
+			 //database = (KeyValueDatabase) ctx.getBean("KeyValueDatabase");
+			}
+			
 			
 			database.actionWriter();
 			database.actionReader();
@@ -48,5 +64,12 @@ public class HelloDatabaseWorldServlet extends HttpServlet {
 		String address = "HelloDatabaseWorld.jsp";
 		RequestDispatcher dispatcher = request.getRequestDispatcher(address);
 		dispatcher.forward(request, response);
+	}
+
+	@Override
+	public void handleRequest(HttpServletRequest arg0, HttpServletResponse arg1)
+			throws ServletException, IOException {
+		// TODO Auto-generated method stub
+		doGet(arg0, arg1);
 	}
 }
