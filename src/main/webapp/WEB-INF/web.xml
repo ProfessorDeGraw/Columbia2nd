@@ -16,7 +16,7 @@
 	
 	<servlet-mapping>
                 <servlet-name>HelloDatabaseWorldServlet</servlet-name>
-                <url-pattern>/HelloDatabaseWorldServlet</url-pattern>
+                <url-pattern>/HelloDatabaseWorld</url-pattern>
         </servlet-mapping>
 
          <servlet>
