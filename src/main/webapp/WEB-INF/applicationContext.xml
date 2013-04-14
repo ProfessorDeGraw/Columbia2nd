@@ -1,17 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
-	
+
 <beans xmlns="http://www.springframework.org/schema/beans"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
 	xsi:schemaLocation="http://www.springframework.org/schema/beans
-           http://www.springframework.org/schema/beans/spring-beans.xsd">
+	http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+	http://www.springframework.org/schema/context
+	http://www.springframework.org/schema/context/spring-context-2.5.xsd">
 
-	<bean id="KeyValueDatabase" class="hw7.KeyValueDatabase"
+	<context:component-scan base-package="org.lds.md.c2" />
+
+	<bean id="KeyValueDatabase" class="org.lds.md.c2.KeyValueDatabase"
 		init-method="openDatabase" destroy-method="closeDatabase">
 		<property name="databaseLoadFile" value="/tmp/occurrence.txt" />
 		<property name="databaseLocation" value="/tmp/berkeleydb" />
 	</bean>
-	
-	<bean id="DispachHandler" class="hw7.DispachHandler">
+
+	<bean id="DispachHandler" class="org.lds.md.c2.DispachHandler">
+	</bean>
+
+	<bean id="HelloDatabase" class="org.lds.md.c2.HelloDatabase">
 		<property name="database" ref="KeyValueDatabase"></property>
 	</bean>
 
