@@ -1,4 +1,4 @@
-package hw7;
+package org.lds.md.c2;
 
 import java.util.Vector;
 import java.util.regex.Matcher;
