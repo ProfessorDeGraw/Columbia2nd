@@ -204,37 +204,16 @@ public class KeyValueDatabase {
 		@Override
 		public SimpleKey entryToObject(TupleInput input) {
 			// TODO Auto-generated method stub
-			 String number = input.readString();
+			 String value = input.readString();
 			 
-			 // (*):(*)@(*)
-			Pattern pattern;
-			
-			SimpleKey k = null;
-			try {
-				pattern = Pattern.compile("(.*):(.*)@(.*)");
-				
-				Matcher matcher = pattern.matcher(number);
-				
-				 if (matcher.find()) {
-					 String p1 = matcher.group(1);
-					 String p2 = matcher.group(2);
-					 String p3 = matcher.group(3);
-					 
-					 k = new SimpleKey(p1, p2, p3);
-				 }
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			 
-	         return k;
+	         return new SimpleKey(value);
 		}
 
 		@Override
 		public void objectToEntry(SimpleKey object, TupleOutput output) {
 			// TODO Auto-generated method stub
 			SimpleKey key = (SimpleKey) object;
-            output.writeString(key.toString());
+            output.writeString(key.toSerial());
 		}
     }
 	
@@ -318,7 +297,7 @@ public class KeyValueDatabase {
 					// map.put(parts[0], line);
 					//int i = 0;
 					//for (String s : parts) {
-						map.put(new SimpleKey(parts[0], parts[1]),  parts[2]);
+						map.put(new SimpleKey(parts[0], parts[1], parts[2]),  parts[3]);
 					//	i++;
 					//}
 					//kvp += i;
@@ -363,9 +342,8 @@ public class KeyValueDatabase {
 			// break;
 			// }
 			dbMessage
-					.append(entry.getKey().toString() + ' ' + entry.getValue());
-			System.out.println(entry.getKey().toString() + ' '
-					+ entry.getValue());
+					.append(entry.getKey().toString() + entry.getValue() + "<br>");
+			System.out.println(entry.getKey().toString() + entry.getValue());
 		}
 		iter = null;
 	}

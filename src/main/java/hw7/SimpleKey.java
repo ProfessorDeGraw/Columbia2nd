@@ -1,43 +1,69 @@
 package hw7;
 
+import java.util.Vector;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 public class SimpleKey {
-	String myRow;
-	String myColumn;
-	String myTime;
-	
-	public SimpleKey(String row, String column) {
-		myRow = row;
-		myColumn = column;
-		myTime = String.valueOf(System.currentTimeMillis());
-	}
-	
-	public SimpleKey(String row, String column, String time) {
-		myRow = row;
-		myColumn = column;
-		myTime = time;
+	Vector<String> values = new Vector<String>();
+
+	public SimpleKey(String serial) {
+
+		Pattern pattern = Pattern.compile("(.*):*");
+		Matcher matcher = pattern.matcher(serial);
+
+		if (matcher.find()) {
+			for (int i = 1; i <= matcher.groupCount(); i++) {
+				values.add(matcher.group(i));
+			}
+		}
+
 	}
 
-	public String getMyRow() {
-		return myRow;
+	public SimpleKey(String table, String row, String column) {
+		values.add(table);
+		values.add(row);
+		values.add(column);
+		values.add(String.valueOf(System.currentTimeMillis()));
 	}
-	public void setMyRow(String row) {
-		this.myRow = row;
+
+	public SimpleKey(String table, String row, String column, String time) {
+		values.add(table);
+		values.add(row);
+		values.add(column);
+		values.add(time);
 	}
-	public String getMyColumn() {
-		return myColumn;
+	
+	public String getTable() {
+		return values.get(0);
 	}
-	public void setMyColumn(String column) {
-		this.myColumn = column;
+
+	public String getRow() {
+		return values.get(1);
 	}
+
+	public String getColumn() {
+		return values.get(2);
+	}
+
 	public String getMyTime() {
-		return myTime;
+		return values.get(3);
 	}
-	public void setMyTime(String time) {
-		this.myTime = time;
+	
+	public String toSerial() {
+		StringBuilder out = new StringBuilder();
+		for ( String i : values) {
+			out.append(i + ":");
+		}
+		return out.toString();
 	}
 	
 	@Override
 	public String toString() {
-		return "(" + myRow + ":" + myColumn + "@" + myTime + ")" ;
+		StringBuilder out = new StringBuilder();
+		for ( String i : values) {
+			out.append(i + ":");
+		}
+		return out.toString();
 	}
 }

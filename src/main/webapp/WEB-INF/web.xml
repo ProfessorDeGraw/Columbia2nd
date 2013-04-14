@@ -7,16 +7,16 @@
          metadata-complete="false">
 
 	<servlet>
-		<display-name>helloDatabaseWorldServlet</display-name>
-		<servlet-name>HelloDatabaseWorldServlet</servlet-name>
+		<display-name>DispachHandler</display-name>
+		<servlet-name>DispachHandler</servlet-name>
 		<servlet-class>
 			org.springframework.web.context.support.HttpRequestHandlerServlet
 		</servlet-class>
 	</servlet>
 	
 	<servlet-mapping>
-                <servlet-name>HelloDatabaseWorldServlet</servlet-name>
-                <url-pattern>/HelloDatabaseWorld</url-pattern>
+                <servlet-name>DispachHandler</servlet-name>
+                <url-pattern>/action/*</url-pattern>
         </servlet-mapping>
 
          <servlet>

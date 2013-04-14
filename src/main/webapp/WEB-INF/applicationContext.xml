@@ -11,7 +11,7 @@
 		<property name="databaseLocation" value="/tmp/berkeleydb" />
 	</bean>
 	
-	<bean id="HelloDatabaseWorldServlet" class="hw7.HelloDatabaseWorldServlet">
+	<bean id="DispachHandler" class="hw7.DispachHandler">
 		<property name="database" ref="KeyValueDatabase"></property>
 	</bean>
 
