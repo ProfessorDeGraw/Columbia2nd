@@ -12,8 +12,8 @@
 
 	<bean id="KeyValueDatabase" class="org.lds.md.c2.KeyValueDatabase"
 		init-method="openDatabase" destroy-method="closeDatabase">
-		<property name="databaseLoadFile" value="/tmp/occurrence.txt" />
-		<property name="databaseLocation" value="/tmp/berkeleydb" />
+		<property name="databaseLoadFile" value="/var/lib/openshift/513d28c14382ec80940000ac/app-root/data/occurrence.txt" />
+		<property name="databaseLocation" value="/var/lib/openshift/513d28c14382ec80940000ac/app-root/data/berkeleydb" />
 	</bean>
 
 	<bean id="DispachHandler" class="org.lds.md.c2.DispachHandler">
