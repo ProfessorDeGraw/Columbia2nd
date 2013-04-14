@@ -12,6 +12,8 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -23,6 +25,8 @@ import org.springframework.web.HttpRequestHandler;
 //@Component("DispachHandler")
 public class DispachHandler implements HttpRequestHandler,
 		ApplicationContextAware {
+	
+	private static final Logger log = LoggerFactory.getLogger(DispachHandler.class);
 
 	private ApplicationContext context = null;
 
@@ -39,15 +43,14 @@ public class DispachHandler implements HttpRequestHandler,
 		List<String> actions = getRequestedActions(baseServletPath, requestPath);
 
 		for (String a : actions) {
-			System.out.println(a);
+			log.trace("path {}", a);
 		}
 
 		try {
 			BeanRequest bean = (BeanRequest) context.getBean(actions.get(0));
 			request.setAttribute("databaseMessage", bean.get(actions.subList(1, actions.size())));
 		} catch (BeansException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			log.error( "BeanRequest failed!", e );
 		}
 
 		String address = "/HelloDatabaseWorld.jsp";
@@ -66,7 +69,7 @@ public class DispachHandler implements HttpRequestHandler,
 		if (matcher.find()) {
 			for (int i = 1; i <= matcher.groupCount(); i++) {
 				values.add(matcher.group(i));
-				System.out.println(matcher.group(i));
+				log.trace("path {}", matcher.group(i));
 			}
 		}
 

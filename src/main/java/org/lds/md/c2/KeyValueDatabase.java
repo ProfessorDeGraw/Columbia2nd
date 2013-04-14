@@ -8,6 +8,9 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.regex.Pattern;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.sleepycat.bind.serial.ClassCatalog;
 import com.sleepycat.bind.serial.SerialBinding;
 import com.sleepycat.bind.serial.StoredClassCatalog;
@@ -60,6 +63,8 @@ class KeyValueDatabaseWriter implements TransactionWorker {
 
 public class KeyValueDatabase {
 	
+	private static final Logger log = LoggerFactory.getLogger(KeyValueDatabase.class);
+	
 	private static boolean create = true;
 	
 	private boolean databaseOpen = false;
@@ -96,8 +101,8 @@ public class KeyValueDatabase {
 	}
 
 	private void openDatabase() {
-		//String dir = "/tmp/berkeleydb";
-
+		log.trace("Staring to setup database");
+		
 		// environment is transactional
 		EnvironmentConfig envConfig = new EnvironmentConfig();
 		envConfig.setTransactional(true);
@@ -116,17 +121,12 @@ public class KeyValueDatabase {
 				databaseOpen = true;
 				
 			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				log.error( "Setup Database failed!", e );
 			}
-			
-			
 		} catch (EnvironmentLockedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			log.error( "Setup Database Environment Lock failed!", e );
 		} catch (DatabaseException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			log.error( "Setup Database Environment failed!", e );
 		}
 	}
 
@@ -144,19 +144,17 @@ public class KeyValueDatabase {
 				runner.run(writer);
 				//runner.run(reader);
 			} catch (DatabaseException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				log.error("Database run failed!", e );
 			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				log.error("Database run failed!", e );
 			}
 		} finally {
 			// close the database outside the transaction
 			try {
+				// TODO
 				//this.close();
 			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				log.error("Database run failed!", e );
 			}
 		}
 	}
@@ -175,19 +173,17 @@ public class KeyValueDatabase {
 				//runner.run(writer);
 				runner.run(reader);
 			} catch (DatabaseException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				log.error("Database read failed!", e );
 			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				log.error("Database read failed!", e );
 			}
 		} finally {
 			// close the database outside the transaction
 			try {
+				// TODO
 				//this.close();
 			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				log.error("Database read failed!", e );
 			}
 		}
 	}
@@ -249,8 +245,7 @@ public class KeyValueDatabase {
 		try {
 			this.close();
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			log.error("Database close failed!", e );
 		}
 	}
 	
@@ -302,12 +297,11 @@ public class KeyValueDatabase {
 					//kvp += i;
 
 				} catch (NumberFormatException e) {
-					e.printStackTrace();
+					log.error("Key parse number format failed!", e );
 				}
 
 				if (count % 10000 == 0) {
-					System.out
-							.println("Added ["
+					log.trace("Added ["
 									+ count
 									+ "].  Average["
 									+ (1000 * kvp / (System.currentTimeMillis() - time))
@@ -315,7 +309,7 @@ public class KeyValueDatabase {
 									+ (1000 * count / (System
 											.currentTimeMillis() - time))
 									+ " records/sec]");
-					System.out.println("last key: " + parts[0]);
+					log.trace("last key: " + parts[0]);
 					// if (count%1000000==0) break;
 				}
 
@@ -325,12 +319,12 @@ public class KeyValueDatabase {
 
 			reader.close();
 		} catch (Exception e) {
-			e.printStackTrace();
+			log.error("Read File failed!", e );
 		}
 	}
 
 	public void readAllKeys() {
-		System.out.println("Reading data");
+		log.trace("Reading data");
 		// Iterator<Map.Entry<String, String>> iter = map.tailMap("47874585:")
 		// .entrySet().iterator();
 		Iterator<Map.Entry<SimpleKey, String>> iter = map.entrySet().iterator();
@@ -342,7 +336,7 @@ public class KeyValueDatabase {
 			// }
 			dbMessage
 					.append(entry.getKey().toString() + entry.getValue() + "<br>");
-			System.out.println(entry.getKey().toString() + entry.getValue());
+			log.trace(entry.getKey().toString() + entry.getValue());
 		}
 		iter = null;
 	}
