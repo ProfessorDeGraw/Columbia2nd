@@ -33,7 +33,7 @@ public class DispachHandler implements HttpRequestHandler,
 		// SimpleSendEMail.sendEmail("4434162561@messaging.sprintpcs.com",
 		// "Hi!", "This is a new test Msg ;)....");
 
-		String baseServletPath = request.getServletPath();
+/*		String baseServletPath = request.getServletPath();
 		String requestPath = request.getRequestURI();
 
 		List<String> actions = getRequestedActions(baseServletPath, requestPath);
@@ -48,7 +48,7 @@ public class DispachHandler implements HttpRequestHandler,
 		} catch (BeansException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}
+		}*/
 
 		String address = "/HelloDatabaseWorld.jsp";
 		RequestDispatcher dispatcher = request.getRequestDispatcher(address);
