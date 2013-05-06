@@ -9,12 +9,13 @@ public class SimpleKey {
 
 	public SimpleKey(String serial) {
 
-		Pattern pattern = Pattern.compile("(.*):*");
+		Pattern pattern = Pattern.compile("([^:]{0,}?):([^:]{0,}?):([^:]{0,}?):([^:]{0,}?):");
 		Matcher matcher = pattern.matcher(serial);
-
-		if (matcher.find()) {
+		
+		if (matcher.matches()) {
 			for (int i = 1; i <= matcher.groupCount(); i++) {
-				values.add(matcher.group(i));
+				String match = matcher.group(i);
+				values.add(match);
 			}
 		}
 
@@ -46,7 +47,7 @@ public class SimpleKey {
 		return values.get(2);
 	}
 
-	public String getMyTime() {
+	public String getTime() {
 		return values.get(3);
 	}
 	
