@@ -182,7 +182,7 @@ public class KeyValueDatabase {
 		while (iter.hasNext()) {
 			Map.Entry<SimpleKey, String> entry = iter.next();
 			String value = map.remove(entry.getKey());
-			//log.trace("removed:" + entry.getKey().toString() + ":" + value);
+			log.trace("removed:" + entry.getKey().toString() + ":" + value);
 		}
 		iter = null;
 	}
