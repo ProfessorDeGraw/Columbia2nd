@@ -1,9 +1,6 @@
 package org.lds.md.c2;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
 import java.util.List;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.DisposableBean;
@@ -22,15 +19,11 @@ public class Data implements BeanRequest, DisposableBean {
 
 	@Override
 	public Object get(List<String> parms) {
+		Helper.fixParms(parms);
+		
 		if (parms.size() >= 2) {
 			String table = parms.get(0);
-			String column;
-			try {
-				column = URLDecoder.decode(parms.get(1), "UTF-8");
-			} catch (UnsupportedEncodingException e) {
-				column = parms.get(1);
-				log.warn("Encode Error:", e);
-			}
+			String column = parms.get(1);
 			List<List<String>> data = database.actionAllKeysByTableByColumn(
 					table, column);
 			StringBuilder sb = new StringBuilder();
