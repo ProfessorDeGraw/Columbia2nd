@@ -865,7 +865,7 @@ public class KeyValueDatabase {
 		
 		int respCode = client.executeMethod(auth);
 		
-		log.trace("executeMethod");
+		log.trace("execute Method");
 		// Header location = auth.getResponseHeader("location");
 		Header cookieHrd = auth.getResponseHeader("set-cookie");
 		
