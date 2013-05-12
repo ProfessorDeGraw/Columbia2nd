@@ -14,7 +14,7 @@ public class SimpleSendEMail {
 		Email email = new SimpleEmail();
 		email.setSmtpPort(587);
 		email.setAuthenticator(new DefaultAuthenticator("degraw@gmail.com",
-				"Goog1130"));
+				"password"));
 		email.setDebug(true);
 		email.setHostName("smtp.gmail.com");
 		try {
