@@ -32,9 +32,12 @@ public class Load implements BeanRequest, DisposableBean {
 			
 			if (file.contains("lds")) {
 				try {
+					log.trace("Getting data from lds.org");
 					BufferedReader page = KeyValueDatabase.GetLDSPage("nathandegraw", parms.get(2));
+					log.trace("Loading data from lds.org");
 					KeyValueDatabase.loadMemberData(database, "new_members",
 							page);
+					log.trace("Finished with data from lds.org");
 				} catch (HttpException e) {
 					// TODO Auto-generated catch block
 					log.error("HttpException", e);
