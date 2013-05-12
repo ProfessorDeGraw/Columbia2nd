@@ -834,7 +834,7 @@ public class KeyValueDatabase {
 		// charsRead = reader.read(chars);
 		// }
 
-		// System.out.println(sw.toString());
+		// log.trace(sw.toString());
 	}
 
 	private static InputStream getInfoBody(String USR, String PWD) throws IOException,
@@ -845,34 +845,50 @@ public class KeyValueDatabase {
 		 * fail with a certificate exception.
 		 */
 
+		log.trace("Stating Auth");
+		
 		String authUrl = "https://lds.org/login.html";
 		HttpClient client = new HttpClient();
+		
+		log.trace("Set policy");
 		client.getParams().setCookiePolicy(CookiePolicy.BROWSER_COMPATIBILITY);
 
 		PostMethod auth = new PostMethod(authUrl);
 		auth.addParameter("username", USR);
 		auth.addParameter("password", PWD);
+		
+		log.trace("Set user");
 
 		auth.setFollowRedirects(false);
+		
+		log.trace("setFollowRedirects");
+		
 		int respCode = client.executeMethod(auth);
+		
+		log.trace("executeMethod");
 		// Header location = auth.getResponseHeader("location");
 		Header cookieHrd = auth.getResponseHeader("set-cookie");
+		
+		log.trace("set-cookie");
 
-		System.out.println("called: " + authUrl);
-		System.out.println("response: " + respCode);
-		// System.out.println("location: " + location.toExternalForm());
+		log.trace("called: " + authUrl);
+		log.trace("response: " + respCode);
+		// log.trace("location: " + location.toExternalForm());
+		
+		log.trace("call-response");
 
 		HeaderElement[] elements = cookieHrd.getElements();
 		for (int i = 0; elements != null && i < elements.length; i++) {
-			System.out.println("Received set-cookie: " + elements[i].getName()
+			log.trace("Received set-cookie: " + elements[i].getName()
 					+ "=" + elements[i].getValue());
 		}
 		String value = cookieHrd.getValue();
 		String[] parts = value.split(";");
 		String ssoToken = parts[0].split("=")[1];
+		
+		log.trace("call-ssoToken");
 
-		System.out.println("ssoToken: " + ssoToken);
-		System.out.println();
+		log.trace("ssoToken: " + ssoToken) ;
 
 		if (respCode != 200) {
 			log.error("--Auth failed--");
@@ -898,7 +914,7 @@ public class KeyValueDatabase {
 		// + startOfToday + "-" + daysOut + "/L/";
 		String uri = "https://www.lds.org/directory/services/ludrs/unit/member-list/200239/csv";
 
-		System.out.println("calling: " + uri);
+		log.trace("calling: " + uri);
 
 		HttpMethod method = new GetMethod(uri);
 		method.addRequestHeader("cookie", "ObSSOCookie=" + ssoToken);
@@ -907,7 +923,7 @@ public class KeyValueDatabase {
 		InputStream body = method.getResponseBodyAsStream();
 		Header ctype = method.getResponseHeader("content-type");
 		String val = ctype.getValue();
-		System.out.println("Content-Type: " + val);
+		log.trace("Content-Type: " + val);
 		return body;
 	}
 }
