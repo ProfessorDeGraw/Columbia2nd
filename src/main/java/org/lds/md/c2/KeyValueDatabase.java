@@ -2,8 +2,12 @@ package org.lds.md.c2;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -11,6 +15,14 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.regex.Pattern;
 
+import org.apache.commons.httpclient.Header;
+import org.apache.commons.httpclient.HeaderElement;
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.HttpException;
+import org.apache.commons.httpclient.HttpMethod;
+import org.apache.commons.httpclient.cookie.CookiePolicy;
+import org.apache.commons.httpclient.methods.GetMethod;
+import org.apache.commons.httpclient.methods.PostMethod;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,7 +64,8 @@ class KeyValueDatabaseAllKeysReader implements TransactionWorker {
 	List<List<String>> keys;
 	String table, column;
 
-	KeyValueDatabaseAllKeysReader(KeyValueDatabase myDb, String myTable, String myColumn) {
+	KeyValueDatabaseAllKeysReader(KeyValueDatabase myDb, String myTable,
+			String myColumn) {
 		db = myDb;
 		table = myTable;
 		column = myColumn;
@@ -196,7 +209,9 @@ public class KeyValueDatabase {
 		Iterator<Map.Entry<SimpleKey, String>> iter = map.entrySet().iterator();
 		while (iter.hasNext()) {
 			Map.Entry<SimpleKey, String> entry = iter.next();
-			if ( entry.getKey().getTable().equals(myTable) && entry.getKey().getRow().equals(myRow) && entry.getKey().getColumn().equals(myColumn)) {
+			if (entry.getKey().getTable().equals(myTable)
+					&& entry.getKey().getRow().equals(myRow)
+					&& entry.getKey().getColumn().equals(myColumn)) {
 				String value = map.remove(entry.getKey());
 				log.trace("removed:" + entry.getKey().toString() + ":" + value);
 			}
@@ -259,16 +274,17 @@ public class KeyValueDatabase {
 	public void initDB() {
 		actionWriterInitDB();
 	}
-	
+
 	public List<List<String>> actionAllKeys() {
 		return actionAllKeysByTable(null);
 	}
-	
+
 	public List<List<String>> actionAllKeysByTable(String table) {
 		return actionAllKeysByTableByColumn(table, null);
 	}
 
-	public List<List<String>> actionAllKeysByTableByColumn(String table, String column) {
+	public List<List<String>> actionAllKeysByTableByColumn(String table,
+			String column) {
 
 		List<List<String>> retKeys = null;
 
@@ -525,7 +541,9 @@ public class KeyValueDatabase {
 		Iterator<Map.Entry<SimpleKey, String>> iter = map.entrySet().iterator();
 		while (iter.hasNext()) {
 			Map.Entry<SimpleKey, String> entry = iter.next();
-			if ( (table == null || entry.getKey().getTable().equals(table)) && (column == null || entry.getKey().getColumn().equals(column))) {
+			if ((table == null || entry.getKey().getTable().equals(table))
+					&& (column == null || entry.getKey().getColumn()
+							.equals(column))) {
 				List<String> key = new ArrayList<String>();
 				key.add(entry.getKey().getTable());
 				key.add(entry.getKey().getRow());
@@ -599,7 +617,7 @@ public class KeyValueDatabase {
 				log.error("Database run failed!", e);
 			}
 		}
-		
+
 	}
 
 	public void actionRemoveAllKeys() {
@@ -610,7 +628,8 @@ public class KeyValueDatabase {
 		TransactionRunner runner = new TransactionRunner(env);
 		try {
 			// open and access the database within a transaction
-			KeyValueDatabaseRemoveAll writer = new KeyValueDatabaseRemoveAll(this);
+			KeyValueDatabaseRemoveAll writer = new KeyValueDatabaseRemoveAll(
+					this);
 			// KeyValueDatabaseReader reader = new KeyValueDatabaseReader(this);
 			try {
 				runner.run(writer);
@@ -630,51 +649,62 @@ public class KeyValueDatabase {
 			}
 		}
 	}
-	
-public static void loadMemberDataFile(KeyValueDatabase database, String tableName, String fileName) {
-		
-		BufferedReader wardDir = null;
-		
-		try {
-			wardDir = new BufferedReader(
-					new FileReader(fileName));
 
+	public static void loadMemberDataFile(KeyValueDatabase database,
+			String tableName, String fileName) {
+		try {
+			loadMemberData(database, tableName, new BufferedReader(
+					new FileReader(fileName)));
+		} catch (FileNotFoundException e) {
+			log.error("FileNotFoundException", e);
+		}
+	}
+
+	public static void loadMemberData(KeyValueDatabase database,
+			String tableName, BufferedReader data) {
+
+		BufferedReader wardDir = null;
+
+		try {
 			String thisLine;
 
 			boolean firstLine = true;
 			List<String> headerNames = new ArrayList<String>();
 
-			while ((thisLine = wardDir.readLine()) != null) { // while loop
-																// begins here
+			while ((thisLine = data.readLine()) != null) { // while loop
+															// begins here
 				List<String> parsedLine = new ArrayList<String>();
 				String parseLine = thisLine;
-				while (parseLine.length()>0) {
-					if (parseLine.length()==1) {
+				while (parseLine.length() > 0) {
+					if (parseLine.length() == 1) {
 						parseLine = parseLine.substring(1);
 					} else if (parseLine.charAt(0) == '\"') {
 						int nextQuote = parseLine.substring(1).indexOf("\"") + 1;
 						String left = parseLine.substring(1, nextQuote);
-						String right = parseLine.substring(nextQuote+1);
+						String right = parseLine.substring(nextQuote + 1);
 						parsedLine.add(left);
 						parseLine = right;
-					} else if (parseLine.charAt(0) == ',' && parseLine.charAt(1) == ',') {
+					} else if (parseLine.charAt(0) == ','
+							&& parseLine.charAt(1) == ',') {
 						parsedLine.add("");
 						String right = parseLine.substring(1);
 						parseLine = right;
-					} else if (parseLine.charAt(0) == ',' && parseLine.charAt(1) == '\"') {
+					} else if (parseLine.charAt(0) == ','
+							&& parseLine.charAt(1) == '\"') {
 						int nextQuote = parseLine.substring(2).indexOf("\"") + 2;
 						String left = parseLine.substring(2, nextQuote);
-						String right = parseLine.substring(nextQuote+1);
+						String right = parseLine.substring(nextQuote + 1);
 						parsedLine.add(left);
 						parseLine = right;
 					} else {
 						log.warn("Unknown parse:" + parseLine);
 					}
 				}
-				
-				String[] mg = parsedLine.toArray(new String[0]);;
-				
-				//String[] mg = thisLine.split("\",\"");
+
+				String[] mg = parsedLine.toArray(new String[0]);
+				;
+
+				// String[] mg = thisLine.split("\",\"");
 
 				if (mg.length > 0 && mg[0].length() > 0
 						&& mg[0].charAt(0) == '\"') {
@@ -683,15 +713,14 @@ public static void loadMemberDataFile(KeyValueDatabase database, String tableNam
 
 				if (mg.length > 0) {
 					if (mg[mg.length - 1].length() > 0) {
-						if (mg[mg.length - 1].charAt(mg[mg.length - 1]
-								.length() - 1) == '\"') {
-							mg[mg.length - 1] = mg[mg.length - 1]
-									.substring(0,
-											mg[mg.length - 1].length() - 1);
+						if (mg[mg.length - 1]
+								.charAt(mg[mg.length - 1].length() - 1) == '\"') {
+							mg[mg.length - 1] = mg[mg.length - 1].substring(0,
+									mg[mg.length - 1].length() - 1);
 						}
 					}
 				}
-				
+
 				if (firstLine) {
 					for (String m : mg) {
 						log.trace("Header:" + m);
@@ -700,13 +729,14 @@ public static void loadMemberDataFile(KeyValueDatabase database, String tableNam
 					firstLine = false;
 				} else {
 					log.trace("Line:" + thisLine);
-					if (mg.length>2) {
-					database.actionAddKey(tableName,  mg[1], "key", "1");
-					int i=0;
-					for (String m : mg) {
-						database.actionAddKey(tableName, mg[1], headerNames.get(i), m);
-						i++;
-					}
+					if (mg.length > 2) {
+						database.actionAddKey(tableName, mg[1], "key", "1");
+						int i = 0;
+						for (String m : mg) {
+							database.actionAddKey(tableName, mg[1],
+									headerNames.get(i), m);
+							i++;
+						}
 					}
 				}
 
@@ -726,21 +756,158 @@ public static void loadMemberDataFile(KeyValueDatabase database, String tableNam
 				// }
 				// }
 
-				//break;
+				// break;
 
 			} // end while
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} finally {
-			if (wardDir!=null) {
-			try {
-				wardDir.close();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+			if (wardDir != null) {
+				try {
+					wardDir.close();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
 		}
+	}
+
+	public static List<String> detectChanges(KeyValueDatabase database,
+			String leftTable, String rightTable) {
+		List<String> lines = new ArrayList<String>();
+
+		List<List<String>> left = database.actionAllKeysByTableByColumn(
+				leftTable, "key");
+		List<List<String>> right = database.actionAllKeysByTableByColumn(
+				rightTable, "key");
+
+		List<String> leftKeyTypeOnly = new ArrayList<String>();
+		for (List<String> leftRow : left) {
+			leftKeyTypeOnly.add(leftRow.get(1));
+		}
+
+		List<String> rightKeyTypeOnly = new ArrayList<String>();
+		for (List<String> rightRow : right) {
+			rightKeyTypeOnly.add(rightRow.get(1));
+		}
+
+		for (String name : leftKeyTypeOnly) {
+			int found = rightKeyTypeOnly.lastIndexOf(name);
+			if (found == -1) {
+				lines.add(name + " --Removed");
+				log.debug(name + " --Removed");
+			}
+		}
+
+		for (String name : rightKeyTypeOnly) {
+			int found = leftKeyTypeOnly.lastIndexOf(name);
+			if (found == -1) {
+				lines.add(name + " --Added");
+				log.debug(name + " --Added");
+			}
+		}
+
+		// for ( int i=0; i<13; i++) {
+		// log.trace(leftKeyTypeOnly.get(i));
+		// }
+		return lines;
+	}
+
+	public static BufferedReader GetLDSPage(String USR, String PWD)
+			throws IOException, HttpException, UnsupportedEncodingException {
+		InputStream body = getInfoBody(USR, PWD);
+
+		// now convert to characters. utf-8 is specified due to the content type
+		// header's specified charset, should actually parse and used that but
+		// I'll take a short cut for now
+		InputStreamReader reader = new InputStreamReader(body, "utf-8");
+		// char[] chars = new char[1024];
+		// int charsRead = reader.read(chars);
+		// StringWriter sw = new StringWriter();
+
+		return new BufferedReader(reader);
+
+		// while (charsRead != -1) {
+		// sw.write(chars, 0, charsRead);
+		// charsRead = reader.read(chars);
+		// }
+
+		// System.out.println(sw.toString());
+	}
+
+	private static InputStream getInfoBody(String USR, String PWD) throws IOException,
+			HttpException {
+		/*
+		 * WARNING: https requires that the SSL certificates served by the
+		 * server be located in the local trust store otherwise request will
+		 * fail with a certificate exception.
+		 */
+
+		String authUrl = "https://lds.org/login.html";
+		HttpClient client = new HttpClient();
+		client.getParams().setCookiePolicy(CookiePolicy.BROWSER_COMPATIBILITY);
+
+		PostMethod auth = new PostMethod(authUrl);
+		auth.addParameter("username", USR);
+		auth.addParameter("password", PWD);
+
+		auth.setFollowRedirects(false);
+		int respCode = client.executeMethod(auth);
+		// Header location = auth.getResponseHeader("location");
+		Header cookieHrd = auth.getResponseHeader("set-cookie");
+
+		System.out.println("called: " + authUrl);
+		System.out.println("response: " + respCode);
+		// System.out.println("location: " + location.toExternalForm());
+
+		HeaderElement[] elements = cookieHrd.getElements();
+		for (int i = 0; elements != null && i < elements.length; i++) {
+			System.out.println("Received set-cookie: " + elements[i].getName()
+					+ "=" + elements[i].getValue());
+		}
+		String value = cookieHrd.getValue();
+		String[] parts = value.split(";");
+		String ssoToken = parts[0].split("=")[1];
+
+		System.out.println("ssoToken: " + ssoToken);
+		System.out.println();
+
+		if (respCode != 200) {
+			log.error("--Auth failed--");
+			throw new HttpException();
+		}
+
+		// ------ now access restricted resource -------
+
+		// long curr = System.currentTimeMillis();
+		// GregorianCalendar cal = new GregorianCalendar();
+		// cal.set(cal.get(GregorianCalendar.YEAR),
+		// cal.get(GregorianCalendar.MONTH),
+		// cal.get(GregorianCalendar.DATE), 0, // hours
+		// 0, // minutes
+		// 0); // seconds
+		// long startOfToday = cal.getTimeInMillis();
+		// long totalDaysDesired = 30;
+		// long daysOut = startOfToday + totalDaysDesired * 24L * 60L * 60L
+		// * 1000L;
+
+		// String uri =
+		// "https://lds.org/church-calendar/services/lucrs/evt/locations/0/"
+		// + startOfToday + "-" + daysOut + "/L/";
+		String uri = "https://www.lds.org/directory/services/ludrs/unit/member-list/200239/csv";
+
+		System.out.println("calling: " + uri);
+
+		HttpMethod method = new GetMethod(uri);
+		method.addRequestHeader("cookie", "ObSSOCookie=" + ssoToken);
+		method.setFollowRedirects(false);
+		int status = client.executeMethod(method);
+		InputStream body = method.getResponseBodyAsStream();
+		Header ctype = method.getResponseHeader("content-type");
+		String val = ctype.getValue();
+		System.out.println("Content-Type: " + val);
+		return body;
 	}
 }

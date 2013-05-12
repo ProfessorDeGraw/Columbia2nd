@@ -47,6 +47,10 @@
 	<beans:bean id="Drop" class="org.lds.md.c2.Drop">
 		<beans:property name="database" ref="KeyValueDatabase"></beans:property>
 	</beans:bean>
+	
+	<beans:bean id="Changes" class="org.lds.md.c2.Changes">
+		<beans:property name="database" ref="KeyValueDatabase"></beans:property>
+	</beans:bean>
 
 	<beans:bean id="HelloDatabase" class="org.lds.md.c2.HelloDatabase">
 		<beans:property name="database" ref="KeyValueDatabase"></beans:property>
