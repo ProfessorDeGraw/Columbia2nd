@@ -7,7 +7,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -15,14 +14,18 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.regex.Pattern;
 
-import org.apache.commons.httpclient.Header;
-import org.apache.commons.httpclient.HeaderElement;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpException;
-import org.apache.commons.httpclient.HttpMethod;
-import org.apache.commons.httpclient.cookie.CookiePolicy;
-import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.commons.httpclient.methods.PostMethod;
+import org.apache.http.Header;
+import org.apache.http.HeaderElement;
+import org.apache.http.HttpHost;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.CookieStore;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.params.ClientPNames;
+import org.apache.http.client.params.CookiePolicy;
+import org.apache.http.cookie.Cookie;
+import org.apache.http.impl.client.DefaultHttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -698,6 +701,8 @@ public class KeyValueDatabase {
 						parseLine = right;
 					} else {
 						log.warn("Unknown parse:" + parseLine);
+						parseLine = "";
+						// throw new IOException("Unknown parse:"+ parseLine);
 					}
 				}
 
@@ -816,7 +821,7 @@ public class KeyValueDatabase {
 	}
 
 	public static BufferedReader GetLDSPage(String USR, String PWD)
-			throws IOException, HttpException, UnsupportedEncodingException {
+			throws ClientProtocolException, IOException {
 		InputStream body = getInfoBody(USR, PWD);
 
 		// now convert to characters. utf-8 is specified due to the content type
@@ -837,63 +842,75 @@ public class KeyValueDatabase {
 		// log.trace(sw.toString());
 	}
 
-	private static InputStream getInfoBody(String USR, String PWD) throws IOException,
-			HttpException {
+	private static InputStream getInfoBody(String USR, String PWD)
+			throws ClientProtocolException, IOException {
 		/*
 		 * WARNING: https requires that the SSL certificates served by the
 		 * server be located in the local trust store otherwise request will
 		 * fail with a certificate exception.
 		 */
 
-		log.trace("Stating Auth");
-		
-		String authUrl = "https://lds.org/login.html";
-		HttpClient client = new HttpClient();
-		
-		log.trace("Set policy");
-		client.getParams().setCookiePolicy(CookiePolicy.BROWSER_COMPATIBILITY);
+		String authUrl = "https://www.lds.org/login.html";
+		DefaultHttpClient authClient = new DefaultHttpClient();
 
-		PostMethod auth = new PostMethod(authUrl);
-		auth.addParameter("username", USR);
-		auth.addParameter("password", PWD);
-		
-		log.trace("Set user");
+		authClient.getParams().setParameter(
+				"http.protocol.single-cookie-header", true);
+		authClient.getParams().setParameter(ClientPNames.COOKIE_POLICY,
+				CookiePolicy.BROWSER_COMPATIBILITY);
 
-		auth.setFollowRedirects(false);
-		
-		log.trace("setFollowRedirects");
-		
-		int respCode = client.executeMethod(auth);
-		
-		log.trace("execute Method");
+		HttpPost auth = new HttpPost(authUrl);
+		auth.setHeader("username", USR);
+		auth.setHeader("password", PWD);
+
+		// CookieStore cookieStore = new CookieStore();
+
+		// authClient.setCookieStore(cookieStore);
+
+		// auth.setFollowRedirects(false);
+
+		HttpHost AuthTargetHost = new HttpHost("lds.org");
+		HttpResponse AuthHttpResponse = authClient
+				.execute(AuthTargetHost, auth);
+
+		// int respCode = client.executeMethod(auth);
 		// Header location = auth.getResponseHeader("location");
-		Header cookieHrd = auth.getResponseHeader("set-cookie");
-		
-		log.trace("set-cookie");
+		// DefaultHttpClient httpclient = new DefaultHttpClient();
+
+		List<Cookie> cookies = authClient.getCookieStore().getCookies();
+		if (cookies.isEmpty()) {
+			log.trace("None Cookies");
+		} else {
+			for (int i = 0; i < cookies.size(); i++) {
+				log.trace("- " + cookies.get(i).toString());
+			}
+		}
+
+		// Header cookieHrd = auth.getFirstHeader("set-cookie");
 
 		log.trace("called: " + authUrl);
-		log.trace("response: " + respCode);
-		// log.trace("location: " + location.toExternalForm());
-		
-		log.trace("call-response");
+		log.trace("response: " + AuthHttpResponse.toString());
 
-		HeaderElement[] elements = cookieHrd.getElements();
-		for (int i = 0; elements != null && i < elements.length; i++) {
-			log.trace("Received set-cookie: " + elements[i].getName()
-					+ "=" + elements[i].getValue());
-		}
-		String value = cookieHrd.getValue();
-		String[] parts = value.split(";");
-		String ssoToken = parts[0].split("=")[1];
-		
-		log.trace("call-ssoToken");
+		// if (cookieHrd==null) {
+		// return null;
+		// }
+		// System.out.println("location: " + location.toExternalForm());
 
-		log.trace("ssoToken: " + ssoToken) ;
+		// HeaderElement[] elements = cookieHrd.getElements();
+		// for (int i = 0; elements != null && i < elements.length; i++) {
+		// System.out.println("Received set-cookie: " + elements[i].getName()
+		// + "=" + elements[i].getValue());
+		// }
+		// String value = cookieHrd.getValue();
+		// String[] parts = value.split(";");
+		// String ssoToken = parts[0].split("=")[1];
 
-		if (respCode != 200) {
-			log.error("--Auth failed--");
-			throw new HttpException();
-		}
+		// System.out.println("ssoToken: " + ssoToken);
+		// System.out.println();
+
+		// if (respCode != 200) {
+		// log.error("--Auth failed--");
+		// throw new HttpException();
+		// }
 
 		// ------ now access restricted resource -------
 
@@ -914,16 +931,28 @@ public class KeyValueDatabase {
 		// + startOfToday + "-" + daysOut + "/L/";
 		String uri = "https://www.lds.org/directory/services/ludrs/unit/member-list/200239/csv";
 
-		log.trace("calling: " + uri);
+		System.out.println("calling: " + uri);
 
-		HttpMethod method = new GetMethod(uri);
-		method.addRequestHeader("cookie", "ObSSOCookie=" + ssoToken);
-		method.setFollowRedirects(false);
-		int status = client.executeMethod(method);
-		InputStream body = method.getResponseBodyAsStream();
-		Header ctype = method.getResponseHeader("content-type");
-		String val = ctype.getValue();
-		log.trace("Content-Type: " + val);
+		HttpGet method = new HttpGet(uri);
+		// method.addHeader("cookie", "ObSSOCookie=" + ssoToken);
+
+		// method.setFollowRedirects(false);
+
+		DefaultHttpClient client = new DefaultHttpClient();
+
+		client.setCookieStore(authClient.getCookieStore());
+
+		HttpHost targetHost = new HttpHost("www.lds.org");
+		HttpResponse httpResponse = client.execute(targetHost, method);
+
+		// int status = client.executeMethod(method);
+		// InputStream body = method.getResponseBodyAsStream();
+		InputStream body = httpResponse.getEntity().getContent();
+		Header[] ctype = method.getAllHeaders();
+		// String val = ctype.
+		// System.out.println("Content-Type: " + val);
+		// return null;
+
 		return body;
 	}
 }

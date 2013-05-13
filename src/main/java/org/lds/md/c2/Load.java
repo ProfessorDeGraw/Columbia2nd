@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.List;
 
-import org.apache.commons.httpclient.HttpException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.DisposableBean;
@@ -38,9 +37,6 @@ public class Load implements BeanRequest, DisposableBean {
 					KeyValueDatabase.loadMemberData(database, "new_members",
 							page);
 					log.trace("Finished with data from lds.org");
-				} catch (HttpException e) {
-					// TODO Auto-generated catch block
-					log.error("HttpException", e);
 				} catch (UnsupportedEncodingException e) {
 					// TODO Auto-generated catch block
 					log.error("UnsupportedEncodingException", e);
