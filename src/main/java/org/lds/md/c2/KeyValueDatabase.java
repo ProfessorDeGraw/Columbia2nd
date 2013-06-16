@@ -679,6 +679,11 @@ public class KeyValueDatabase {
 				List<String> parsedLine = new ArrayList<String>();
 				String parseLine = thisLine;
 				while (parseLine.length() > 0) {
+					
+					if (parseLine.length() > 4 && parseLine.substring(0, 4).contains("\"De ")) {
+						log.trace("De ");
+					}
+					
 					if (parseLine.length() == 1) {
 						parseLine = parseLine.substring(1);
 					} else if (parseLine.charAt(0) == '\"') {
