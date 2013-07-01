@@ -15,11 +15,9 @@ import java.util.SortedMap;
 import java.util.regex.Pattern;
 
 import org.apache.http.Header;
-import org.apache.http.HeaderElement;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.CookieStore;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.params.ClientPNames;
@@ -88,7 +86,7 @@ class KeyValueDatabaseAllKeysReader implements TransactionWorker {
 class KeyValueDatabaseWriter implements TransactionWorker {
 
 	KeyValueDatabase myDb;
-	private String myDatabaseLoadFile;
+	private final String myDatabaseLoadFile;
 
 	KeyValueDatabaseWriter(KeyValueDatabase db, String databaseLoadFile) {
 		myDb = db;
@@ -122,6 +120,30 @@ class KeyValueDatabaseWrite implements TransactionWorker {
 	public void doWork() throws Exception {
 		// TODO Auto-generated method stub
 		myDb.writeKey(myTable, myRow, myColumn, myValue);
+	}
+
+}
+
+class KeyValueDatabaseSimpleWrite implements TransactionWorker {
+
+	KeyValueDatabase myDb;
+
+	String myTable, myRow, myColumn, myTime, myValue;
+
+	KeyValueDatabaseSimpleWrite(KeyValueDatabase db, String table, String row,
+			String column, String time, String value) {
+		myDb = db;
+		myTable = table;
+		myRow = row;
+		myColumn = column;
+		myTime = time;
+		myValue = value;
+	}
+
+	@Override
+	public void doWork() throws Exception {
+		// TODO Auto-generated method stub
+		myDb.writeKey(myTable, myRow, myColumn, myTime, myValue);
 	}
 
 }
@@ -225,6 +247,11 @@ public class KeyValueDatabase {
 	public void writeKey(String myTable, String myRow, String myColumn,
 			String myValue) {
 		map.put(new SimpleKey(myTable, myRow, myColumn), myValue);
+	}
+
+	public void writeKey(String myTable, String myRow, String myColumn,
+			String myTime, String myValue) {
+		map.put(new SimpleKey(myTable, myRow, myColumn, myTime), myValue);
 	}
 
 	public void setDatabaseLocation(String databaseLocation) {
@@ -401,7 +428,7 @@ public class KeyValueDatabase {
 		@Override
 		public void objectToEntry(SimpleKey object, TupleOutput output) {
 			// TODO Auto-generated method stub
-			SimpleKey key = (SimpleKey) object;
+			SimpleKey key = object;
 			output.writeString(key.toSerial());
 		}
 	}
@@ -679,11 +706,12 @@ public class KeyValueDatabase {
 				List<String> parsedLine = new ArrayList<String>();
 				String parseLine = thisLine;
 				while (parseLine.length() > 0) {
-					
-					if (parseLine.length() > 4 && parseLine.substring(0, 4).contains("\"De ")) {
+
+					if (parseLine.length() > 4
+							&& parseLine.substring(0, 4).contains("\"De ")) {
 						log.trace("De ");
 					}
-					
+
 					if (parseLine.length() == 1) {
 						parseLine = parseLine.substring(1);
 					} else if (parseLine.charAt(0) == '\"') {
@@ -959,5 +987,80 @@ public class KeyValueDatabase {
 		// return null;
 
 		return body;
+	}
+
+	public static void loadMemberDataFileSimple(KeyValueDatabase database,
+			String fileName) {
+		try {
+			loadMemberDataFileSimple(database, new BufferedReader(
+					new FileReader(fileName)));
+		} catch (FileNotFoundException e) {
+			log.error("FileNotFoundException", e);
+		}
+	}
+
+	private static void loadMemberDataFileSimple(KeyValueDatabase database,
+			BufferedReader data) {
+		BufferedReader wardDir = null;
+
+		try {
+			String thisLine;
+
+			while ((thisLine = data.readLine()) != null) {
+				log.warn(thisLine);
+				String[] fields = thisLine.split(":");
+				String[] lastfield = { "" };
+				if (fields[4].length() != 4) {
+					lastfield = fields[4].split("<br>");
+				}
+
+				database.actionAddKey(fields[0], fields[1], fields[2],
+						fields[3], lastfield[0]);
+			}
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} finally {
+			if (wardDir != null) {
+				try {
+					wardDir.close();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		}
+
+	}
+
+	public void actionAddKey(String table, String row, String column,
+			String timeStamp, String value) {
+		if (databaseOpen == false) {
+			openDatabase();
+		}
+
+		TransactionRunner runner = new TransactionRunner(env);
+		try {
+			// open and access the database within a transaction
+			KeyValueDatabaseSimpleWrite writer = new KeyValueDatabaseSimpleWrite(
+					this, table, row, column, timeStamp, value);
+			// KeyValueDatabaseReader reader = new KeyValueDatabaseReader(this);
+			try {
+				runner.run(writer);
+				// runner.run(reader);
+			} catch (DatabaseException e) {
+				log.error("Database run failed!", e);
+			} catch (Exception e) {
+				log.error("Database run failed!", e);
+			}
+		} finally {
+			// close the database outside the transaction
+			try {
+				// TODO
+				// this.close();
+			} catch (Exception e) {
+				log.error("Database run failed!", e);
+			}
+		}
 	}
 }

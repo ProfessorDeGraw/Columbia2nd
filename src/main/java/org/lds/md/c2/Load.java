@@ -24,18 +24,18 @@ public class Load implements BeanRequest, DisposableBean {
 	@Override
 	public Object get(List<String> parms) {
 		Helper.fixParms(parms);
-		
+
 		if (parms.size() >= 2) {
 			String table = parms.get(0);
 			String file = parms.get(1);
-			
+
 			if (file.contains("lds")) {
 				try {
 					log.trace("Getting data from lds.org");
-					BufferedReader page = KeyValueDatabase.GetLDSPage("nathandegraw", parms.get(2));
+					BufferedReader page = KeyValueDatabase.GetLDSPage(
+							"nathandegraw", parms.get(2));
 					log.trace("Loading data from lds.org");
-					KeyValueDatabase.loadMemberData(database, "new_members",
-							page);
+					KeyValueDatabase.loadMemberData(database, table, page);
 					log.trace("Finished with data from lds.org");
 				} catch (UnsupportedEncodingException e) {
 					// TODO Auto-generated catch block
@@ -45,8 +45,9 @@ public class Load implements BeanRequest, DisposableBean {
 					log.error("IOException", e);
 				}
 			} else {
-			KeyValueDatabase.loadMemberDataFile(database, table, "/var/lib/openshift/513d28c14382ec80940000ac/app-root/data/" +
-					file);
+				KeyValueDatabase.loadMemberDataFile(database, table,
+						"/var/lib/openshift/513d28c14382ec80940000ac/app-root/data/"
+								+ file);
 			}
 		}
 		return "Data";

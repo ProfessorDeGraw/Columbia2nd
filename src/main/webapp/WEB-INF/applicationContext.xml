@@ -55,4 +55,14 @@
 	<beans:bean id="HelloDatabase" class="org.lds.md.c2.HelloDatabase">
 		<beans:property name="database" ref="KeyValueDatabase"></beans:property>
 	</beans:bean>
+	
+	<beans:bean id="DatabaseToFile" class="org.lds.md.c2.DatabaseToFile">
+		<beans:property name="database" ref="KeyValueDatabase"></beans:property>
+		<beans:property name="defaultSaveFile" value="database_backup.html"></beans:property>
+	</beans:bean>
+	
+	<beans:bean id="LoadFromFile" class="org.lds.md.c2.LoadFromFile">
+		<beans:property name="database" ref="KeyValueDatabase"></beans:property>
+	</beans:bean>
+	
 </beans:beans>

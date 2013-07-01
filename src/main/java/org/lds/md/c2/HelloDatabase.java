@@ -4,12 +4,9 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
 import java.util.List;
 
 import org.apache.http.Header;
-import org.apache.http.HeaderElement;
-import org.apache.http.HttpException;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
@@ -53,7 +50,7 @@ public class HelloDatabase implements BeanRequest, DisposableBean {
 
 		String USR = "nathandegraw";
 		String PWD = "PASSWORD";
-		
+
 		String USR2 = "degraw";
 		String PWD2 = "PASSWORD";
 		// database.openDatabase();
@@ -64,7 +61,7 @@ public class HelloDatabase implements BeanRequest, DisposableBean {
 		// log.trace(database.actionAllKeys().toString());
 
 		log.trace("Self Test");
-		
+
 		try {
 			getElggPage(USR2, PWD2);
 		} catch (ClientProtocolException e) {
@@ -84,23 +81,25 @@ public class HelloDatabase implements BeanRequest, DisposableBean {
 
 		// database.actionRemoveKey("members", "family", "De Graw");
 
-		//database.actionRemoveAllKeys();
-		
-		//try {
-		//	BufferedReader page = KeyValueDatabase.GetLDSPage(USR, PWD);
-		//	KeyValueDatabase.loadMemberData(database, "new_members",
-		//			page);
-		//} catch (UnsupportedEncodingException e) {
-		//	// TODO Auto-generated catch block
-		//	e.printStackTrace();
-		//} catch (IOException e) {
-		//	// TODO Auto-generated catch block
-		//	e.printStackTrace();
-		//}
+		// database.actionRemoveAllKeys();
 
-		//String request = "https://signin.lds.org/login.html?username=nathandegraw&password=PASSWORD";
+		// try {
+		// BufferedReader page = KeyValueDatabase.GetLDSPage(USR, PWD);
+		// KeyValueDatabase.loadMemberData(database, "new_members",
+		// page);
+		// } catch (UnsupportedEncodingException e) {
+		// // TODO Auto-generated catch block
+		// e.printStackTrace();
+		// } catch (IOException e) {
+		// // TODO Auto-generated catch block
+		// e.printStackTrace();
+		// }
 
-		//String ldsDirURL = "https://www.lds.org/directory/services/ludrs/unit/member-list/200239/csv";
+		// String request =
+		// "https://signin.lds.org/login.html?username=nathandegraw&password=PASSWORD";
+
+		// String ldsDirURL =
+		// "https://www.lds.org/directory/services/ludrs/unit/member-list/200239/csv";
 
 		// log.trace(database.actionAllKeys().toString());
 
@@ -126,22 +125,24 @@ public class HelloDatabase implements BeanRequest, DisposableBean {
 		// log.trace(database.actionAllKeys().toString());
 	}
 
-	private void getElggPage(String username, String password) throws IOException, ClientProtocolException {
+	private void getElggPage(String username, String password)
+			throws IOException, ClientProtocolException {
 		String authUrl = "http://elgg-columbia2nd.rhcloud.com/services/api/rest/xml/?method=auth.gettoken";
 		DefaultHttpClient authClient = new DefaultHttpClient();
-		
+
 		authClient.getParams().setParameter(
 				"http.protocol.single-cookie-header", true);
 		authClient.getParams().setParameter(ClientPNames.COOKIE_POLICY,
 				CookiePolicy.BROWSER_COMPATIBILITY);
-		
+
 		HttpPost auth = new HttpPost(authUrl);
 		auth.setHeader("username", username);
 		auth.setHeader("password", password);
-		
+
 		HttpHost AuthTargetHost = new HttpHost("elgg-columbia2nd.rhcloud.com");
-		HttpResponse AuthHttpResponse = authClient.execute(AuthTargetHost, auth);
-		
+		HttpResponse AuthHttpResponse = authClient
+				.execute(AuthTargetHost, auth);
+
 		List<Cookie> cookies = authClient.getCookieStore().getCookies();
 		if (cookies.isEmpty()) {
 			log.trace("None Cookies");
@@ -150,10 +151,10 @@ public class HelloDatabase implements BeanRequest, DisposableBean {
 				log.trace("- " + cookies.get(i).toString());
 			}
 		}
-		
+
 		log.trace("called: " + authUrl);
 		log.trace("response: " + AuthHttpResponse.toString());
-		
+
 		String uri = "http://elgg-columbia2nd.rhcloud.com/services/api/rest/xml/?method=user.get_profile_fields";
 
 		System.out.println("calling: " + uri);
@@ -187,7 +188,7 @@ public class HelloDatabase implements BeanRequest, DisposableBean {
 		// StringWriter sw = new StringWriter();
 
 		BufferedReader br = new BufferedReader(reader);
-		
+
 		String thisLine;
 		while ((thisLine = br.readLine()) != null) {
 			log.trace(thisLine);
