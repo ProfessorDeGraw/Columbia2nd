@@ -1,0 +1,271 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<title>Basic REST code</title>
+</head>
+<body>
+<![CDATA[
+public interface BeanRequest {
+	Object get(List<String> parms);
+
+	void doWork();
+}
+
+public class ContextAwareMain /*implements ApplicationContextAware*/ {
+	private static final Logger log = LoggerFactory.getLogger(ContextAwareMain.class);
+	//private ApplicationContext ac;
+	private BeanRequest request;
+
+	//@Override
+	//public void setApplicationContext(ApplicationContext arg0)
+	//		throws BeansException {
+	//	ac = arg0;
+	//} 
+	
+	public void setRequest(BeanRequest request) {
+		this.request = request;
+	}
+
+	public BeanRequest getRequest() {
+		return request;
+	}
+
+	/**
+	 * @param args
+	 */
+	public static void main(String[] args) {
+		AbstractApplicationContext ctx = new ClassPathXmlApplicationContext(
+				"file:src/main/webapp/WEB-INF/applicationContext.xml");
+
+		ContextAwareMain demo = (ContextAwareMain) ctx
+				.getBean("ContextAwareMain");
+		demo.doWork();
+		
+		ctx.close();
+	}
+
+	public void doWork() {
+		log.trace("Running DB");
+		//request.get(null);
+		request.doWork();
+	}
+
+}
+
+public class DispachHandler implements HttpRequestHandler,
+		ApplicationContextAware {
+	
+	private static final Logger log = LoggerFactory.getLogger(DispachHandler.class);
+
+	private ApplicationContext context = null;
+
+	@Override
+	public void handleRequest(HttpServletRequest request,
+			HttpServletResponse response) throws ServletException, IOException {
+
+		// SimpleSendEMail.sendEmail("4434162561@messaging.sprintpcs.com",
+		// "Hi!", "This is a new test Msg ;)....");
+
+		String baseServletPath = request.getServletPath();
+		String requestPath = request.getRequestURI();
+
+		List<String> actions = getRequestedActions(baseServletPath, requestPath);
+
+		for (String a : actions) {
+			log.trace("path {}", a);
+		}
+
+		try {
+			BeanRequest bean = (BeanRequest) context.getBean(actions.get(0));
+			request.setAttribute("databaseMessage", bean.get(actions.subList(1, actions.size())));
+		} catch (BeansException e) {
+			log.error( "BeanRequest failed!", e );
+		}
+
+		String address = "/HelloDatabaseWorld.jsp";
+		RequestDispatcher dispatcher = request.getRequestDispatcher(address);
+		dispatcher.forward(request, response);
+	}
+
+	private List<String> getRequestedActions(String baseServletPath,
+			String requestPath) {
+		Vector<String> values = new Vector<String>();
+
+		Pattern pattern = Pattern.compile(".*" + baseServletPath
+				+ "([/[^/].]+)");
+		Matcher matcher = pattern.matcher(requestPath);
+
+		if (matcher.find()) {
+			for (int i = 1; i <= matcher.groupCount(); i++) {
+				values.add(matcher.group(i));
+				log.trace("path {}", matcher.group(i));
+			}
+		}
+
+		String actionsString = "";
+		if (values.size() > 0) {
+			actionsString = values.elementAt(0);
+		}
+		List<String> actions = Arrays.asList(actionsString.split("/"));
+
+		if (actions.size() > 0 && actions.get(0).length() == 0) {
+			actions = actions.subList(1, actions.size());
+		}
+		return actions;
+	}
+
+	@Override
+	public void setApplicationContext(ApplicationContext appContext)
+			throws BeansException {
+		context = appContext;
+	}
+}
+
+public class Helper {
+	private static final Logger log = LoggerFactory.getLogger(Helper.class);
+
+	public static void fixParms(List<String> parms) {
+		for ( int i=0; i<parms.size(); i++) {
+			try {
+				parms.set(i, URLDecoder.decode(parms.get(i), "UTF-8"));
+			} catch (UnsupportedEncodingException e) {
+				log.warn("Encode Error:", e);
+			}
+		}
+	}
+}
+
+public class Test implements BeanRequest {
+	
+	private static final Logger log = LoggerFactory.getLogger(HelloDatabase.class);
+
+	@Override
+	public Object get(List<String> parms) {
+		if (parms.size()>0) {
+		return parms.get(0);
+		}
+		return "Test";
+	}
+
+	@Override
+	public void doWork() {
+		log.trace("do work");
+	}
+
+}
+
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+	xmlns:context="http://www.springframework.org/schema/context" xsi:schemaLocation="http://www.springframework.org/schema/beans 
+	http://www.springframework.org/schema/beans/spring-beans-2.5.xsd http://www.springframework.org/schema/context 
+	http://www.springframework.org/schema/context/spring-context-2.5.xsd"> -->
+
+
+<beans:beans xmlns="http://www.springframework.org/schema/security"
+	xmlns:beans="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:jdbc="http://www.springframework.org/schema/jdbc" xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+           http://www.springframework.org/schema/jdbc
+           http://www.springframework.org/schema/jdbc/spring-jdbc-3.0.xsd
+           http://www.springframework.org/schema/security
+           http://www.springframework.org/schema/security/spring-security-3.0.xsd
+           http://www.springframework.org/schema/context 
+           http://www.springframework.org/schema/context/spring-context-3.0.xsd">
+
+	<context:annotation-config />
+	<context:component-scan base-package="org.lds.md.c2" />
+
+	<beans:bean id="KeyValueDatabase" class="org.lds.md.c2.KeyValueDatabase"
+		init-method="openDatabase" destroy-method="closeDatabase">
+		<beans:property name="databaseLoadFile"
+			value="/var/lib/openshift/513d28c14382ec80940000ac/app-root/data/occurrence.txt" />
+		<beans:property name="databaseLocation"
+			value="/var/lib/openshift/513d28c14382ec80940000ac/app-root/data/berkeleydb" />
+	</beans:bean>
+
+	<beans:bean id="DispachHandler" class="org.lds.md.c2.DispachHandler">
+	</beans:bean>
+
+	<beans:bean id="ContextAwareMain" class="org.lds.md.c2.ContextAwareMain">
+		<beans:property name="request" ref="HelloDatabase"></beans:property>
+	</beans:bean>
+	
+	<beans:bean id="Data" class="org.lds.md.c2.Data">
+		<beans:property name="database" ref="KeyValueDatabase"></beans:property>
+	</beans:bean>
+	
+</beans:beans>
+
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+	<appender name="fileAppender" class="ch.qos.logback.core.FileAppender">
+		<file>/var/lib/openshift/513d28c14382ec80940000ac/app-root/data/myLogFile.log
+		</file>
+		<append>true</append>
+		<encoder>
+			<pattern>%d [%thread] %-5level %logger{35} - %msg%n</pattern>
+		</encoder>
+	</appender>
+
+	<appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+		<encoder>
+			<pattern>%date{ISO8601} %-5level %X{akkaSource} %X{sourceThread} - %msg%n</pattern>
+		</encoder>
+	</appender>
+
+	<root level="TRACE">
+		<appender-ref ref="fileAppender" />
+		<appender-ref ref="STDOUT" />
+	</root>
+</configuration>
+
+<?xml version="1.0" encoding="UTF-8"?>
+
+<web-app version="3.0"
+         xmlns="http://java.sun.com/xml/ns/javaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
+         metadata-complete="false">
+
+	<servlet>
+		<display-name>DispachHandler</display-name>
+		<servlet-name>DispachHandler</servlet-name>
+		<servlet-class>
+			org.springframework.web.context.support.HttpRequestHandlerServlet
+		</servlet-class>
+	</servlet>
+	
+	<servlet-mapping>
+                <servlet-name>DispachHandler</servlet-name>
+                <url-pattern>/action/*</url-pattern>
+        </servlet-mapping> 
+
+         <servlet>
+                  <servlet-name>health</servlet-name>
+                  <jsp-file>/health.jsp</jsp-file>
+         </servlet>
+         <servlet-mapping>
+                  <servlet-name>health</servlet-name>
+                  <url-pattern>/health</url-pattern>
+         </servlet-mapping>
+         
+         <context-param>
+         	<param-name>contextConfigLocation</param-name>
+         	<param-value>/WEB-INF/applicationContext*.xml</param-value>
+         </context-param>
+         
+         <listener>
+         	<listener-class>
+         		org.springframework.web.context.ContextLoaderListener
+         	</listener-class>
+         </listener>
+         
+</web-app>
+
+]]>
+
+</body>
+</html>
