@@ -1,21 +1,25 @@
 package org.lds.md.c2;
 
+import java.util.Arrays;
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.support.AbstractApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
-public class ContextAwareMain /*implements ApplicationContextAware*/ {
-	private static final Logger log = LoggerFactory.getLogger(ContextAwareMain.class);
-	//private ApplicationContext ac;
+public class ContextAwareMain {
+	private static final Logger log = LoggerFactory
+			.getLogger(ContextAwareMain.class);
+	// private ApplicationContext ac;
 	private BeanRequest request;
 
-	//@Override
-	//public void setApplicationContext(ApplicationContext arg0)
-	//		throws BeansException {
-	//	ac = arg0;
-	//} 
-	
+	// @Override
+	// public void setApplicationContext(ApplicationContext arg0)
+	// throws BeansException {
+	// ac = arg0;
+	// }
+
 	public void setRequest(BeanRequest request) {
 		this.request = request;
 	}
@@ -33,15 +37,15 @@ public class ContextAwareMain /*implements ApplicationContextAware*/ {
 
 		ContextAwareMain demo = (ContextAwareMain) ctx
 				.getBean("ContextAwareMain");
-		demo.doWork();
-		
+		demo.get(Arrays.asList(args));
+
 		ctx.close();
 	}
 
-	public void doWork() {
+	public Object get(List<String> args) {
 		log.trace("Running DB");
-		//request.get(null);
-		request.doWork();
+		// request.get(null);
+		return request.get(args);
 	}
 
 }

@@ -75,26 +75,26 @@
 
 	}
 	function showAddress(address) {
-		var contentString = address + "<br>Outside Area";
+		var contentString = address + "<br/>Outside Area";
 
 		geocoder.geocode({
 			'address' : address
 		}, function(results, status) {
 			if (status == google.maps.GeocoderStatus.OK) {
 				var point = results[0].geometry.location;
-				contentString += "<br>" + point;
+				contentString += "<br/>" + point;
 				map.setCenter(point);
-				if (marker && marker.setMap)
+				if (marker &amp;&amp; marker.setMap)
 					marker.setMap(null);
 				marker = new google.maps.Marker({
 					map : map,
 					position : point
 				});
-				for ( var i = 0; i < geoXml.docs[0].gpolygons.length; i++) {
+				for ( var i = 0; i %lt; geoXml.docs[0].gpolygons.length; i++) {
 					if (geoXml.docs[0].gpolygons[i].Contains(point)) {
-						contentString = address + "<br>"
+						contentString = address + "<br/>"
 								+ geoXml.docs[0].placemarks[i].name;
-						contentString += "<br>" + point + "<br>polygon#" + i;
+						contentString += "<br/>" + point + "<br/>polygon#" + i;
 						i = 999; // Jump out of loop
 					}
 				}

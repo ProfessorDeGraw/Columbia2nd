@@ -1,15 +1,14 @@
 package org.lds.md.c2;
 
 import java.util.List;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.stereotype.Component;
 
 @Component("Data")
 public class Data implements BeanRequest, DisposableBean {
 
-	private static final Logger log = LoggerFactory.getLogger(Data.class);
+	// private static final Logger log = LoggerFactory.getLogger(Data.class);
 
 	KeyValueDatabase database = null;
 
@@ -20,7 +19,7 @@ public class Data implements BeanRequest, DisposableBean {
 	@Override
 	public Object get(List<String> parms) {
 		Helper.fixParms(parms);
-		
+
 		if (parms.size() >= 2) {
 			String table = parms.get(0);
 			String column = parms.get(1);
@@ -44,11 +43,6 @@ public class Data implements BeanRequest, DisposableBean {
 			return sb;
 		}
 		return "Data";
-	}
-
-	@Override
-	public void doWork() {
-		log.trace("do work");
 	}
 
 	@Override

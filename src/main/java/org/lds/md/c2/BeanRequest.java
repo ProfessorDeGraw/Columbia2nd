@@ -2,8 +2,8 @@ package org.lds.md.c2;
 
 import java.util.List;
 
-public interface BeanRequest {
-	Object get(List<String> parms);
+import org.springframework.beans.factory.DisposableBean;
 
-	void doWork();
+public interface BeanRequest extends DisposableBean {
+	Object get(List<String> parms);
 }

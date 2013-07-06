@@ -33,7 +33,7 @@
 	</beans:bean>
 
 	<beans:bean id="ContextAwareMain" class="org.lds.md.c2.ContextAwareMain">
-		<beans:property name="request" ref="HelloDatabase"></beans:property>
+		<beans:property name="request" ref="TestSpace"></beans:property>
 	</beans:bean>
 	
 	<beans:bean id="Data" class="org.lds.md.c2.Data">

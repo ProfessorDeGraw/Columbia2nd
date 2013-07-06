@@ -6,16 +6,14 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.List;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.stereotype.Component;
 
 @Component("DatabaseToFile")
 public class DatabaseToFile implements BeanRequest, DisposableBean {
 
-	private static final Logger log = LoggerFactory
-			.getLogger(DatabaseToFile.class);
+	// private static final Logger log = LoggerFactory
+	// .getLogger(DatabaseToFile.class);
 
 	KeyValueDatabase database = null;
 	String defaultSaveFile = "database_backup.html";
@@ -59,10 +57,5 @@ public class DatabaseToFile implements BeanRequest, DisposableBean {
 	@Override
 	public void destroy() throws Exception {
 		database.closeDatabase();
-	}
-
-	@Override
-	public void doWork() {
-
 	}
 }

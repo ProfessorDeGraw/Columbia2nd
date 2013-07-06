@@ -14,7 +14,6 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.regex.Pattern;
 
-import org.apache.http.Header;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
@@ -152,7 +151,7 @@ class KeyValueDatabaseRemove implements TransactionWorker {
 
 	KeyValueDatabase myDb;
 
-	String myTable, myRow, myColumn;
+	String myTable, myRow = null, myColumn = null;
 
 	KeyValueDatabaseRemove(KeyValueDatabase db, String table, String row,
 			String column) {
@@ -162,10 +161,19 @@ class KeyValueDatabaseRemove implements TransactionWorker {
 		myColumn = column;
 	}
 
+	public KeyValueDatabaseRemove(KeyValueDatabase db, String table) {
+		myDb = db;
+		myTable = table;
+	}
+
 	@Override
 	public void doWork() throws Exception {
 		// TODO Auto-generated method stub
-		myDb.removeKey(myTable, myRow, myColumn);
+		if (myRow == null && myColumn == null) {
+			myDb.removeKey(myTable);
+		} else {
+			myDb.removeKey(myTable, myRow, myColumn);
+		}
 	}
 
 }
@@ -222,6 +230,21 @@ public class KeyValueDatabase {
 			Map.Entry<SimpleKey, String> entry = iter.next();
 			String value = map.remove(entry.getKey());
 			log.trace("removed:" + entry.getKey().toString() + ":" + value);
+		}
+		iter = null;
+	}
+
+	public void removeKey(String myTable) {
+		if (databaseOpen == false) {
+			openDatabase();
+		}
+		Iterator<Map.Entry<SimpleKey, String>> iter = map.entrySet().iterator();
+		while (iter.hasNext()) {
+			Map.Entry<SimpleKey, String> entry = iter.next();
+			if (entry.getKey().getTable().equals(myTable)) {
+				String value = map.remove(entry.getKey());
+				log.trace("removed:" + entry.getKey().toString() + ":" + value);
+			}
 		}
 		iter = null;
 	}
@@ -340,7 +363,7 @@ public class KeyValueDatabase {
 		} finally {
 			// close the database outside the transaction
 			try {
-				// TODO
+				// TODO Auto-generated catch block
 				// this.close();
 			} catch (Exception e) {
 				log.error("Database read failed!", e);
@@ -372,7 +395,7 @@ public class KeyValueDatabase {
 		} finally {
 			// close the database outside the transaction
 			try {
-				// TODO
+				// TODO Auto-generated catch block
 				// this.close();
 			} catch (Exception e) {
 				log.error("Database run failed!", e);
@@ -401,7 +424,7 @@ public class KeyValueDatabase {
 		} finally {
 			// close the database outside the transaction
 			try {
-				// TODO
+				// TODO Auto-generated catch block
 				// this.close();
 			} catch (Exception e) {
 				log.error("Database read failed!", e);
@@ -611,7 +634,37 @@ public class KeyValueDatabase {
 		} finally {
 			// close the database outside the transaction
 			try {
-				// TODO
+				// TODO Auto-generated catch block
+				// this.close();
+			} catch (Exception e) {
+				log.error("Database run failed!", e);
+			}
+		}
+	}
+
+	public void actionRemoveKey(String table) {
+		if (databaseOpen == false) {
+			openDatabase();
+		}
+
+		TransactionRunner runner = new TransactionRunner(env);
+		try {
+			// open and access the database within a transaction
+			KeyValueDatabaseRemove writer = new KeyValueDatabaseRemove(this,
+					table);
+			// KeyValueDatabaseReader reader = new KeyValueDatabaseReader(this);
+			try {
+				runner.run(writer);
+				// runner.run(reader);
+			} catch (DatabaseException e) {
+				log.error("Database run failed!", e);
+			} catch (Exception e) {
+				log.error("Database run failed!", e);
+			}
+		} finally {
+			// close the database outside the transaction
+			try {
+				// TODO Auto-generated catch block
 				// this.close();
 			} catch (Exception e) {
 				log.error("Database run failed!", e);
@@ -641,7 +694,7 @@ public class KeyValueDatabase {
 		} finally {
 			// close the database outside the transaction
 			try {
-				// TODO
+				// TODO Auto-generated catch block
 				// this.close();
 			} catch (Exception e) {
 				log.error("Database run failed!", e);
@@ -672,7 +725,7 @@ public class KeyValueDatabase {
 		} finally {
 			// close the database outside the transaction
 			try {
-				// TODO
+				// TODO Auto-generated catch block
 				// this.close();
 			} catch (Exception e) {
 				log.error("Database run failed!", e);
@@ -981,7 +1034,7 @@ public class KeyValueDatabase {
 		// int status = client.executeMethod(method);
 		// InputStream body = method.getResponseBodyAsStream();
 		InputStream body = httpResponse.getEntity().getContent();
-		Header[] ctype = method.getAllHeaders();
+		// Header[] ctype = method.getAllHeaders();
 		// String val = ctype.
 		// System.out.println("Content-Type: " + val);
 		// return null;
@@ -1056,7 +1109,7 @@ public class KeyValueDatabase {
 		} finally {
 			// close the database outside the transaction
 			try {
-				// TODO
+				// TODO Auto-generated catch block
 				// this.close();
 			} catch (Exception e) {
 				log.error("Database run failed!", e);

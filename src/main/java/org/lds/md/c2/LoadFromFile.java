@@ -38,11 +38,6 @@ public class LoadFromFile implements BeanRequest, DisposableBean {
 	}
 
 	@Override
-	public void doWork() {
-		log.trace("do work");
-	}
-
-	@Override
 	public void destroy() throws Exception {
 		database.closeDatabase();
 	}
