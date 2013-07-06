@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+	xmlns:context="http://www.springframework.org/schema/context" xsi:schemaLocation="http://www.springframework.org/schema/beans 
+	http://www.springframework.org/schema/beans/spring-beans-2.5.xsd http://www.springframework.org/schema/context 
+	http://www.springframework.org/schema/context/spring-context-2.5.xsd"> -->
+
+
+<beans:beans xmlns="http://www.springframework.org/schema/security"
+	xmlns:beans="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:jdbc="http://www.springframework.org/schema/jdbc" xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+           http://www.springframework.org/schema/jdbc
+           http://www.springframework.org/schema/jdbc/spring-jdbc-3.0.xsd
+           http://www.springframework.org/schema/security
+           http://www.springframework.org/schema/security/spring-security-3.0.xsd
+           http://www.springframework.org/schema/context 
+           http://www.springframework.org/schema/context/spring-context-3.0.xsd">
+
+	<context:annotation-config />
+	<context:component-scan base-package="org.lds.md.c2" />
+
+	<beans:bean id="KeyValueDatabase" class="org.lds.md.c2.KeyValueDatabase"
+		init-method="openDatabase" destroy-method="closeDatabase">
+		<beans:property name="databaseLoadFile"
+			value="/var/lib/openshift/513d28c14382ec80940000ac/app-root/data/occurrence.txt" />
+		<beans:property name="databaseLocation"
+			value="/var/lib/openshift/513d28c14382ec80940000ac/app-root/data/berkeleydb" />
+	</beans:bean>
+
+	<beans:bean id="DispachHandler" class="org.lds.md.c2.DispachHandler">
+	</beans:bean>
+
+	<beans:bean id="ContextAwareMain" class="org.lds.md.c2.ContextAwareMain">
+		<beans:property name="request" ref="TestSpace"></beans:property>
+	</beans:bean>
+	
+	<beans:bean id="Data" class="org.lds.md.c2.Data">
+		<beans:property name="database" ref="KeyValueDatabase"></beans:property>
+	</beans:bean>
+	
+	<beans:bean id="Load" class="org.lds.md.c2.Load">
+		<beans:property name="database" ref="KeyValueDatabase"></beans:property>
+	</beans:bean>
+	
+	<beans:bean id="Drop" class="org.lds.md.c2.Drop">
+		<beans:property name="database" ref="KeyValueDatabase"></beans:property>
+	</beans:bean>
+	
+	<beans:bean id="Changes" class="org.lds.md.c2.Changes">
+		<beans:property name="database" ref="KeyValueDatabase"></beans:property>
+	</beans:bean>
+
+	<beans:bean id="HelloDatabase" class="org.lds.md.c2.HelloDatabase">
+		<beans:property name="database" ref="KeyValueDatabase"></beans:property>
+	</beans:bean>
+	
+	<beans:bean id="DatabaseToFile" class="org.lds.md.c2.DatabaseToFile">
+		<beans:property name="database" ref="KeyValueDatabase"></beans:property>
+		<beans:property name="defaultSaveFile" value="database_backup.html"></beans:property>
+	</beans:bean>
+	
+	<beans:bean id="LoadFromFile" class="org.lds.md.c2.LoadFromFile">
+		<beans:property name="database" ref="KeyValueDatabase"></beans:property>
+	</beans:bean>
+	
+</beans:beans>

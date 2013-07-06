@@ -33,7 +33,7 @@ public class ContextAwareMain {
 	 */
 	public static void main(String[] args) {
 		AbstractApplicationContext ctx = new ClassPathXmlApplicationContext(
-				"file:src/main/webapp/WEB-INF/applicationContext.xml");
+				"applicationContext.xml");
 
 		ContextAwareMain demo = (ContextAwareMain) ctx
 				.getBean("ContextAwareMain");
