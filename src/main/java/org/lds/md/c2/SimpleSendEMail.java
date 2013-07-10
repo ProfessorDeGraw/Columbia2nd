@@ -18,8 +18,8 @@ public class SimpleSendEMail implements BeanRequest {
 	private void sendEmail(String toEmail, String subject, String message) {
 		Email email = new SimpleEmail();
 		email.setSmtpPort(587);
-		email.setAuthenticator(new DefaultAuthenticator("degraw@gmail.com",
-				"Goog1130"));
+		email.setAuthenticator(new DefaultAuthenticator("person@gmail.com",
+				"PASSWORD"));
 		email.setDebug(true);
 		email.setHostName("smtp.gmail.com");
 		try {
