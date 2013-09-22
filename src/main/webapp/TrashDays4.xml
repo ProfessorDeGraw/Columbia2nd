@@ -45,8 +45,8 @@
 				<outline>1</outline>
 			</PolyStyle>
 		</Style>
-		<Placemark id="Area A">
-			<name>Area A</name>
+		<Placemark id="A">
+			<name>Long Gate</name>
 			<visibility>1</visibility>
 			<open>0</open>
 			<styleUrl>#StyleA</styleUrl>
