@@ -145,8 +145,8 @@
 				</outerBoundaryIs>
 			</Polygon>
 		</Placemark>
-		<Placemark id="Area B">
-			<name>Area B</name>
+		<Placemark id="B">
+			<name>Doncaster</name>
 			<visibility>1</visibility>
 			<open>0</open>
 			<styleUrl>#StyleB</styleUrl>
@@ -284,8 +284,8 @@
 				</outerBoundaryIs>
 			</Polygon>
 		</Placemark>
-		<Placemark id="Area C">
-			<name>Area C</name>
+		<Placemark id="C">
+			<name>Ilchester</name>
 			<visibility>1</visibility>
 			<open>0</open>
 			<styleUrl>#StyleA</styleUrl>
@@ -385,8 +385,8 @@
 				</outerBoundaryIs>
 			</Polygon>
 		</Placemark>
-		<Placemark id="Area D">
-			<name>Area D</name>
+		<Placemark id="D">
+			<name>Rockburn</name>
 			<visibility>1</visibility>
 			<open>0</open>
 			<styleUrl>#StyleD</styleUrl>
@@ -443,8 +443,8 @@
 				</outerBoundaryIs>
 			</Polygon>
 		</Placemark>
-		<Placemark id="Area E">
-			<name>Area E</name>
+		<Placemark id="E">
+			<name>Montgomery</name>
 			<visibility>1</visibility>
 			<open>0</open>
 			<styleUrl>#StyleC</styleUrl>
@@ -489,8 +489,8 @@
 				</outerBoundaryIs>
 			</Polygon>
 		</Placemark>
-		<Placemark id="Area F">
-			<name>Area F</name>
+		<Placemark id="F">
+			<name>Ducketts</name>
 			<visibility>1</visibility>
 			<open>0</open>
 			<styleUrl>#StyleC</styleUrl>
@@ -523,8 +523,8 @@
 				</outerBoundaryIs>
 			</Polygon>
 		</Placemark>
-		<Placemark id="Area G">
-			<name>Area G</name>
+		<Placemark id="G">
+			<name>Elkridge</name>
 			<visibility>1</visibility>
 			<open>0</open>
 			<styleUrl>#StyleA</styleUrl>
@@ -695,8 +695,8 @@
 				</outerBoundaryIs>
 			</Polygon>
 		</Placemark>
-		<Placemark id="Area H">
-			<name>Area H</name>
+		<Placemark id="H">
+			<name>Hanover</name>
 			<visibility>1</visibility>
 			<open>0</open>
 			<styleUrl>#StyleD</styleUrl>
@@ -779,8 +779,8 @@
 				</outerBoundaryIs>
 			</Polygon>
 		</Placemark>
-		<Placemark id="Area I">
-			<name>Area I</name>
+		<Placemark id="I">
+			<name>The Oaks</name>
 			<visibility>1</visibility>
 			<open>0</open>
 			<styleUrl>#StyleA</styleUrl>
@@ -833,8 +833,8 @@
 				</outerBoundaryIs>
 			</Polygon>
 		</Placemark>
-		<Placemark id="Area J">
-			<name>Area J</name>
+		<Placemark id="J">
+			<name>Mayfield</name>
 			<visibility>1</visibility>
 			<open>0</open>
 			<styleUrl>#StyleB</styleUrl>
@@ -878,8 +878,8 @@
 				</outerBoundaryIs>
 			</Polygon>
 		</Placemark>
-		<Placemark id="Area K">
-			<name>Area K</name>
+		<Placemark id="K">
+			<name>Meadowridge</name>
 			<visibility>1</visibility>
 			<open>0</open>
 			<styleUrl>#StyleA</styleUrl>
@@ -919,8 +919,8 @@
 				</outerBoundaryIs>
 			</Polygon>
 		</Placemark>
-		<Placemark id="Area L">
-			<name>Area L</name>
+		<Placemark id="L">
+			<name>Snowden</name>
 			<visibility>1</visibility>
 			<open>0</open>
 			<styleUrl>#StyleC</styleUrl>
@@ -954,8 +954,8 @@
 				</outerBoundaryIs>
 			</Polygon>
 		</Placemark>
-		<Placemark id="Area M">
-			<name>Area M</name>
+		<Placemark id="M">
+			<name>Falls Run</name>
 			<visibility>1</visibility>
 			<open>0</open>
 			<styleUrl>#StyleB</styleUrl>
@@ -994,8 +994,8 @@
 				</outerBoundaryIs>
 			</Polygon>
 		</Placemark>
-		<Placemark id="Area N">
-			<name>Area N</name>
+		<Placemark id="N">
+			<name>Executive Park</name>
 			<visibility>1</visibility>
 			<open>0</open>
 			<styleUrl>#StyleC</styleUrl>
@@ -1036,8 +1036,8 @@
 				</outerBoundaryIs>
 			</Polygon>
 		</Placemark>
-		<Placemark id="Area O">
-			<name>Area O</name>
+		<Placemark id="O">
+			<name>Hayshed</name>
 			<visibility>1</visibility>
 			<open>0</open>
 			<styleUrl>#StyleA</styleUrl>
@@ -1104,8 +1104,8 @@
 				</outerBoundaryIs>
 			</Polygon>
 		</Placemark>
-		<Placemark id="Area P">
-			<name>Area P</name>
+		<Placemark id="P">
+			<name>Phelps Luck</name>
 			<visibility>1</visibility>
 			<open>0</open>
 			<styleUrl>#StyleD</styleUrl>
@@ -1171,8 +1171,8 @@
 				</outerBoundaryIs>
 			</Polygon>
 		</Placemark>
-		<Placemark id="Area Q">
-			<name>Area Q</name>
+		<Placemark id="Q">
+			<name>Thunder Hill</name>
 			<visibility>1</visibility>
 			<open>0</open>
 			<styleUrl>#StyleB</styleUrl>
@@ -1213,8 +1213,8 @@
 				</outerBoundaryIs>
 			</Polygon>
 		</Placemark>
-		<Placemark id="Area R">
-			<name>Area R</name>
+		<Placemark id="R">
+			<name>Cloudleap</name>
 			<visibility>1</visibility>
 			<open>0</open>
 			<styleUrl>#StyleB</styleUrl>
@@ -1256,8 +1256,8 @@
 				</outerBoundaryIs>
 			</Polygon>
 		</Placemark>
-		<Placemark id="Area S">
-			<name>Area S</name>
+		<Placemark id="S">
+			<name>Stevens Forest</name>
 			<visibility>1</visibility>
 			<open>0</open>
 			<styleUrl>#StyleA</styleUrl>
@@ -1289,8 +1289,8 @@
 				</outerBoundaryIs>
 			</Polygon>
 		</Placemark>
-		<Placemark id="Area T">
-			<name>Area T</name>
+		<Placemark id="T">
+			<name>Farewell Road</name>
 			<visibility>1</visibility>
 			<open>0</open>
 			<styleUrl>#StyleB</styleUrl>
@@ -1359,8 +1359,8 @@
 				</outerBoundaryIs>
 			</Polygon>
 		</Placemark>
-		<Placemark id="Area U">
-			<name>Area U</name>
+		<Placemark id="U">
+			<name>Oakland Mills</name>
 			<visibility>1</visibility>
 			<open>0</open>
 			<styleUrl>#StyleC</styleUrl>
@@ -1425,8 +1425,8 @@
 				</outerBoundaryIs>
 			</Polygon>
 		</Placemark>
-		<Placemark id="Area V">
-			<name>Area V</name>
+		<Placemark id="V">
+			<name>Majors Lane</name>
 			<visibility>1</visibility>
 			<open>0</open>
 			<styleUrl>#StyleA</styleUrl>
