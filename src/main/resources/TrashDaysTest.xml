@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<kml xmlns="http://earth.google.com/kml/2.2">
+	<Document>
+		<Style id="StyleA">
+			<LineStyle>
+				<color>66333333</color>
+				<width>1</width>
+			</LineStyle>
+			<PolyStyle>
+				<color>660066ff</color>
+				<fill>1</fill>
+				<outline>1</outline>
+			</PolyStyle>
+		</Style>
+		<Style id="StyleB">
+			<LineStyle>
+				<color>66333333</color>
+				<width>1</width>
+			</LineStyle>
+			<PolyStyle>
+				<color>66ff6633</color>
+				<fill>1</fill>
+				<outline>1</outline>
+			</PolyStyle>
+		</Style>
+		<Style id="StyleC">
+			<LineStyle>
+				<color>66333333</color>
+				<width>1</width>
+			</LineStyle>
+			<PolyStyle>
+				<color>660000ff</color>
+				<fill>1</fill>
+				<outline>1</outline>
+			</PolyStyle>
+		</Style>
+		<Style id="StyleD">
+			<LineStyle>
+				<color>66333333</color>
+				<width>1</width>
+			</LineStyle>
+			<PolyStyle>
+				<color>6600ff00</color>
+				<fill>1</fill>
+				<outline>1</outline>
+			</PolyStyle>
+		</Style>
+		<Placemark id="C">
+			<name>TestArea</name>
+			<visibility>1</visibility>
+			<open>0</open>
+			<styleUrl>#StyleA</styleUrl>
+			<Polygon>
+				<extrude>0</extrude>
+				<tessellate>1</tessellate>
+				<altitudeMode>clampToGround</altitudeMode>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>
+						-76.79183917007518,39.137165543741,0 -76.67676776535551,39.26928426111707,0 -76.86015325330702,39.28584878611034,0 -76.79183917007518,39.137165543741,0 
+						</coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+	</Document>
+</kml>
