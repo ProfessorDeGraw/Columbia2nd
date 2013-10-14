@@ -1,8 +1,9 @@
-package org.lds.md.c2;
+package org.lds.md.c2.cli;
 
 import java.util.Arrays;
 import java.util.List;
 
+import org.lds.md.c2.web.BeanRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.support.AbstractApplicationContext;

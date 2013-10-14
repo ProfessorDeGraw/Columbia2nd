@@ -36,10 +36,6 @@
 		<beans:property name="request" ref="TestSpace"></beans:property>
 	</beans:bean>
 	
-	<beans:bean id="Data" class="org.lds.md.c2.Data">
-		<beans:property name="database" ref="KeyValueDatabase"></beans:property>
-	</beans:bean>
-	
 	<beans:bean id="Load" class="org.lds.md.c2.Load">
 		<beans:property name="database" ref="KeyValueDatabase"></beans:property>
 	</beans:bean>

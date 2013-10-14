@@ -1,4 +1,4 @@
-package org.lds.md.c2;
+package org.lds.md.c2.action;
 
 import java.util.List;
 
@@ -6,6 +6,7 @@ import org.apache.commons.mail.DefaultAuthenticator;
 import org.apache.commons.mail.Email;
 import org.apache.commons.mail.EmailException;
 import org.apache.commons.mail.SimpleEmail;
+import org.lds.md.c2.web.BeanRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;

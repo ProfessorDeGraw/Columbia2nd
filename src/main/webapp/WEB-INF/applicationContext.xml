@@ -21,7 +21,7 @@
 	<context:annotation-config />
 	<context:component-scan base-package="org.lds.md.c2" />
 
-	<beans:bean id="KeyValueDatabase" class="org.lds.md.c2.KeyValueDatabase"
+	<beans:bean id="KeyValueDatabase" class="org.lds.md.c2.db.KeyValueDatabase"
 		init-method="openDatabase" destroy-method="closeDatabase">
 		<beans:property name="databaseLoadFile"
 			value="/var/lib/openshift/513d28c14382ec80940000ac/app-root/data/occurrence.txt" />
@@ -29,40 +29,16 @@
 			value="/var/lib/openshift/513d28c14382ec80940000ac/app-root/data/berkeleydb" />
 	</beans:bean>
 
-	<beans:bean id="DispachHandler" class="org.lds.md.c2.DispachHandler">
+	<beans:bean id="DispachHandler" class="org.lds.md.c2.web.DispachHandler">
 	</beans:bean>
 
-	<beans:bean id="ContextAwareMain" class="org.lds.md.c2.ContextAwareMain">
+	<beans:bean id="ContextAwareMain" class="org.lds.md.c2.cli.ContextAwareMain">
 		<beans:property name="request" ref="TestSpace"></beans:property>
 	</beans:bean>
 	
-	<beans:bean id="Data" class="org.lds.md.c2.Data">
-		<beans:property name="database" ref="KeyValueDatabase"></beans:property>
-	</beans:bean>
-	
-	<beans:bean id="Load" class="org.lds.md.c2.Load">
-		<beans:property name="database" ref="KeyValueDatabase"></beans:property>
-	</beans:bean>
-	
-	<beans:bean id="Drop" class="org.lds.md.c2.Drop">
-		<beans:property name="database" ref="KeyValueDatabase"></beans:property>
-	</beans:bean>
-	
-	<beans:bean id="Changes" class="org.lds.md.c2.Changes">
-		<beans:property name="database" ref="KeyValueDatabase"></beans:property>
-	</beans:bean>
-
-	<beans:bean id="HelloDatabase" class="org.lds.md.c2.HelloDatabase">
-		<beans:property name="database" ref="KeyValueDatabase"></beans:property>
-	</beans:bean>
-	
-	<beans:bean id="DatabaseToFile" class="org.lds.md.c2.DatabaseToFile">
+	<beans:bean id="DatabaseToFile" class="org.lds.md.c2.action.DatabaseToFile">
 		<beans:property name="database" ref="KeyValueDatabase"></beans:property>
 		<beans:property name="defaultSaveFile" value="database_backup.html"></beans:property>
-	</beans:bean>
-	
-	<beans:bean id="LoadFromFile" class="org.lds.md.c2.LoadFromFile">
-		<beans:property name="database" ref="KeyValueDatabase"></beans:property>
 	</beans:bean>
 	
 </beans:beans>

@@ -1,4 +1,4 @@
-package org.lds.md.c2;
+package org.lds.md.c2.action;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -6,6 +6,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.List;
 
+import org.lds.md.c2.db.KeyValueDatabase;
+import org.lds.md.c2.web.BeanRequest;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.stereotype.Component;
 
@@ -42,8 +44,20 @@ public class DatabaseToFile implements BeanRequest, DisposableBean {
 			}
 			FileWriter fw = new FileWriter(file.getAbsoluteFile());
 			BufferedWriter bw = new BufferedWriter(fw);
-			database.actionReader();
-			bw.write(database.getDbMessage());
+			
+			StringBuilder dbMessage = new StringBuilder();
+			
+			List<List<String>> keys = database.new ReaderBuilder().go();
+			
+			for (List<String> key : keys) {
+				for (String field : key ) {
+					dbMessage.append( field + ":" );
+				}
+				dbMessage.append("<br>\n");
+			}
+			
+			//database.actionReader();
+			bw.write(dbMessage.toString());
 			bw.close();
 
 			return "Database saved to file";

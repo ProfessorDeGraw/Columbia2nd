@@ -1,4 +1,4 @@
-package org.lds.md.c2;
+package org.lds.md.c2.web;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;

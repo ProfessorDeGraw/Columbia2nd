@@ -1,8 +1,11 @@
-package org.lds.md.c2;
+package org.lds.md.c2.action;
 
 import java.util.List;
 
-//@Component("Test")
+import org.lds.md.c2.web.BeanRequest;
+import org.springframework.stereotype.Component;
+
+@Component("Test")
 public class Test implements BeanRequest {
 
 	// private static final Logger log = LoggerFactory
