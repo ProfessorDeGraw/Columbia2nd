@@ -70,6 +70,16 @@ public class UpdateNextGeocode implements BeanRequest, DisposableBean {
 						database.new WriterBuilder().table(table).row(name).column("geocode").value("no,address").go();
 					}
 					
+					try {
+						Thread.sleep(1000);
+						// Thread.sleep(1);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					
+					get(parms);
+					
 					return ("Geocoded address:" + name);
 				}
 			}

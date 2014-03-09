@@ -17,7 +17,7 @@ public class KeyValueWriter implements TransactionWorker {
 		final KeyValueDatabase database;
 
 		String table = null, row = null, column = null, value = null,
-				time = null, data = null;
+				time = "", data = "";
 
 		public Builder(KeyValueDatabase database) {
 			this.database = database;
@@ -72,11 +72,7 @@ public class KeyValueWriter implements TransactionWorker {
 	public void doWork() {
 		// TODO Auto-generated method stub
 		try {
-			if (time == null) {
-				database.writeKey(table, row, column, value);
-			} else {
-				database.writeKey(table, row, column, time, value);
-			}
+			database.writeKey(table, row, column, time, value, data);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			log.warn("Database write failed");

@@ -46,8 +46,9 @@ public class SimpleKey {
 		public Builder serial(String value) {
 			List<String> matches = new ArrayList<String>();
 
+			String regexp= "([^:]{0,}?):([^:]{0,}?):([^:]{0,}?):([^:]{0,}?):([^:]{0,}?):";
 			Pattern pattern = Pattern
-					.compile("([^:]{0,}?):([^:]{0,}?):([^:]{0,}?):([^:]{0,}?):([^:]{0,}?):");
+					.compile(regexp);
 			Matcher matcher = pattern.matcher(value);
 
 			if (matcher.matches()) {
@@ -56,16 +57,21 @@ public class SimpleKey {
 					matches.add(match);
 				}
 			}
+			
+			if (matches.size() == 5) {
 			table = matches.get(0);
 			row = matches.get(1);
 			column = matches.get(2);
 			this.value = matches.get(3);
 			time = matches.get(4);
+			} else {
+				log.warn("SimpleKey Builder serial did not find 5 matches:{}, regex:{}", value,  regexp);
+			}
 			return this;
 		}
 
 		public SimpleKey build() {
-			if (time.equals("")) {
+			if (time==null || time.equals("")) {
 				time = String.valueOf(System.currentTimeMillis());
 			}
 			return new SimpleKey(this);

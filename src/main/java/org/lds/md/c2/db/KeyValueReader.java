@@ -2,18 +2,15 @@ package org.lds.md.c2.db;
 
 import java.util.List;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.sleepycat.collections.TransactionWorker;
 
 public class KeyValueReader implements TransactionWorker {
-	private static final Logger log = LoggerFactory
-			.getLogger(KeyValueReader.class);
+	//private static final Logger log = LoggerFactory
+	//		.getLogger(KeyValueReader.class);
 
 	KeyValueDatabase database;
 	List<List<String>> keys;
-	String table, row, column, value, time, data;
+	String table, row, column, time, value, data;
 
 	public static class Builder {
 		final KeyValueDatabase database;
@@ -65,8 +62,8 @@ public class KeyValueReader implements TransactionWorker {
 		table = builder.table;
 		row = builder.row;
 		column = builder.column;
-		value = builder.value;
 		time = builder.time;
+		value = builder.value;
 		data = builder.data;
 	}
 
@@ -77,17 +74,6 @@ public class KeyValueReader implements TransactionWorker {
 	@Override
 	public void doWork() throws Exception {
 		// TODO Auto-generated method stub
-		if (table == null && row == null && column == null && value == null
-				&& time == null && data == null) {
-			keys = database.readAllKeys();
-		} else if (row == null && value == null) {
-			keys = database.allKeys(table, column);
-		} else if (value == null) {
-			keys = database.allKeys(table, row, column);
-		} else if (row == null) {
-			keys = database.allKeysByValue(table, column, value);
-		} else {
-			log.warn("KeyValueDatabaseAllKeysReader for all values not implemented");
-		}
+		keys = database.getKeys(table, row, column, time, value, data);
 	}
 }

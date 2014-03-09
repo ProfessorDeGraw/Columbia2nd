@@ -192,8 +192,8 @@ public class KeyValueDatabase {
 	}
 	
 	public class WriterBuilder {
-		String table = null, row = null, column = null, value = null,
-				time = null, data = null;
+		String table = "", row = "", column = "", value = "",
+				time = "", data = "";
 		
 		public WriterBuilder table(String value) {
 			table = value;
@@ -233,7 +233,7 @@ public class KeyValueDatabase {
 			TransactionRunner runner = new TransactionRunner(env);
 			try {
 				// open and access the database within a transaction
-				KeyValueWriter writer = new KeyValueWriter.Builder(KeyValueDatabase.this).table(table).row(row).column(column).time(time).value(value).build();
+				KeyValueWriter writer = new KeyValueWriter.Builder(KeyValueDatabase.this).table(table).row(row).column(column).time(time).value(value).data(data).build();
 				try {
 					runner.run(writer);
 				} catch (DatabaseException e) {
@@ -262,9 +262,11 @@ public class KeyValueDatabase {
 		while (iter.hasNext()) {
 			Map.Entry<SimpleKey, String> entry = iter.next();
 			String value = map.remove(entry.getKey());
-			log.trace("removed:" + entry.getKey().toString() + ":" + value);
+			log.warn("removed:{}:{}",entry.getKey().toString(),value);
 		}
 		iter = null;
+		
+		log.warn("Data drop done");
 	}
 
 	public void removeKey(String myTable) {
@@ -301,19 +303,14 @@ public class KeyValueDatabase {
 	}
 
 	public void writeKey(String myTable, String myRow, String myColumn,
-			String myValue) {
-		log.warn("adding: {}", myValue);
+			String myTime, String myValue, String myData) {
+		log.trace("{} adding {} in {} as {} with {}", new Object[] {myTable, myRow, myColumn, myValue, myData});
 		try {
-			map.put(new SimpleKey.Builder().table(myTable).row(myRow).column(myColumn).value(myValue).build(), "");
+			map.put( new SimpleKey.Builder().table(myTable).row(myRow).column(myColumn).time(myTime).value(myValue).build() , myData);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			log.warn("Database add failed", e);
 		}
-	}
-
-	public void writeKey(String myTable, String myRow, String myColumn,
-			String myTime, String myValue) {
-		map.put( new SimpleKey.Builder().table(myTable).row(myRow).column(myColumn).time(myTime).value(myValue).build() , "");
 	}
 
 	public void setDatabaseLocation(String databaseLocation) {
@@ -471,7 +468,7 @@ public class KeyValueDatabase {
 	/** Performs work within a transaction. */
 	public void doWork() {
 		writeManyKeysFromFile("/tmp/occurrence.txt");
-		readAllKeys();
+		getKeys(null, null, null, null, null, null);
 	}
 
 	/** Writes and reads the database via the Map. */
@@ -516,6 +513,7 @@ public class KeyValueDatabase {
 		}
 	}
 
+	/*
 	public List<List<String>> readAllKeys() {
 		Iterator<Map.Entry<SimpleKey, String>> iter = map.entrySet().iterator();
 		
@@ -538,7 +536,9 @@ public class KeyValueDatabase {
 		
 		return keys;
 	}
+	*/
 
+	/*
 	public List<List<String>> allKeys(String table, String column) {
 		if (databaseOpen == false) {
 			openDatabase();
@@ -565,7 +565,9 @@ public class KeyValueDatabase {
 
 		return keys;
 	}
+	*/
 	
+	/*
 	public List<List<String>> allKeys(String table, String row, String column) {
 		if (databaseOpen == false) {
 			openDatabase();
@@ -593,9 +595,10 @@ public class KeyValueDatabase {
 
 		return keys;
 	}
+	*/
 	
-	public List<List<String>> allKeysByValue(String table, String column,
-			String value) {
+	public List<List<String>> getKeys(String table, String row, String column, String time,
+			String value, String data) {
 		if (databaseOpen == false) {
 			openDatabase();
 		}
@@ -606,13 +609,17 @@ public class KeyValueDatabase {
 		while (iter.hasNext()) {
 			Map.Entry<SimpleKey, String> entry = iter.next();
 			if ( (table == null || entry.getKey().getTable().equals(table)  )
-					&& (column == null || entry.getKey().getColumn().equals(column)) 
-							&& ( value == null || entry.getValue().equals(value)) ) {
+					&& (row == null || entry.getKey().getRow().equals(row)) 
+					&& (column == null || entry.getKey().getColumn().equals(column))
+					&& (time == null || entry.getKey().getTime().equals(time))
+					&& (value == null || entry.getKey().getValue().equals(value))
+							&& ( data == null || entry.getValue().equals(data)) ) {
 				List<String> key = new ArrayList<String>();
 				key.add(entry.getKey().getTable());
 				key.add(entry.getKey().getRow());
 				key.add(entry.getKey().getColumn());
 				key.add(entry.getKey().getTime());
+				key.add(entry.getKey().getValue());
 				key.add(entry.getValue());
 				keys.add(key);
 			}
@@ -947,11 +954,11 @@ public class KeyValueDatabase {
 				log.warn(thisLine);
 				String[] fields = thisLine.split(":");
 				String[] lastfield = { "" };
-				if (fields[4].length() != 4) {
-					lastfield = fields[4].split("<br>");
+				if (fields[5].length() != 5) {
+					lastfield = fields[5].split("<br>");
 				}
 				
-				database.new WriterBuilder().table(fields[0]).row(fields[1]).column(fields[2]).time(fields[3]).value(lastfield[0]).go();
+				database.new WriterBuilder().table(fields[0]).row(fields[1]).column(fields[2]).time(fields[3]).value(fields[4]).data(lastfield[0]).go();
 			}
 		} catch (IOException e) {
 			// TODO Auto-generated catch block

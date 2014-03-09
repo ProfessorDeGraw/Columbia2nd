@@ -44,7 +44,7 @@ public class Geocode implements BeanRequest, DisposableBean {
 	private static final Logger log = LoggerFactory.getLogger(Geocode.class);
 
 	KeyValueDatabase database = null;
-	
+
 	private Map<String, Area> placemarksList = null;
 	private String cacheTagLoaded = null;
 
@@ -71,17 +71,18 @@ public class Geocode implements BeanRequest, DisposableBean {
 	}
 
 	public String findGeocode(String geocode) {
-		//Point2D p = addressToGeocode(address);
+		// Point2D p = addressToGeocode(address);
 		String[] parts = geocode.split(",");
-		
+
 		Point2D p;
 		try {
-			p = new Point2D.Double(Double.parseDouble(parts[1]), Double.parseDouble(parts[0]));
+			p = new Point2D.Double(Double.parseDouble(parts[1]),
+					Double.parseDouble(parts[0]));
 		} catch (NumberFormatException e) {
 			// TODO Auto-generated catch block
 			return "Not Found";
 		}
-		
+
 		InputStream kmlStream = Thread.currentThread().getContextClassLoader()
 				.getResourceAsStream("/TrashDays4.xml");
 		Map<String, Area> placemarksList = kmlToArea(kmlStream, "TrashDays4");
@@ -104,7 +105,7 @@ public class Geocode implements BeanRequest, DisposableBean {
 	private Map<String, Area> kmlToArea(InputStream kmlFile, String cacheTag) {
 
 		if (placemarksList == null || cacheTagLoaded == null
-				|| !cacheTagLoaded.equalsIgnoreCase(cacheTag) ) {
+				|| !cacheTagLoaded.equalsIgnoreCase(cacheTag)) {
 			cacheTagLoaded = cacheTag;
 			placemarksList = new HashMap<String, Area>();
 
@@ -221,95 +222,235 @@ public class Geocode implements BeanRequest, DisposableBean {
 		return placemarksList;
 	}
 
+	public int addressMatix(String startStreeetAddress, String endStreeetAddress) {
+		InputStream a = null;
+
+		int drivingTime = Integer.MAX_VALUE;
+		int drivingDistance = Integer.MAX_VALUE;
+
+		int numberOfAttempts = 0;
+		if (startStreeetAddress.length() < 4 || endStreeetAddress.length() < 4) {
+			numberOfAttempts = 3;
+			log.warn("Geo matix skiped for:{}, {}, address to short",
+					startStreeetAddress, endStreeetAddress);
+		} else {
+			a = getMatrixInfoBody(startStreeetAddress, endStreeetAddress);
+		}
+
+		while (numberOfAttempts++ < 3
+				&& (drivingTime == Integer.MAX_VALUE || drivingDistance == Integer.MAX_VALUE)) {
+			try {
+				if (numberOfAttempts > 1) {
+					try {
+						log.warn(
+								"Geo matix failed for:{}, {}, trying the address",
+								startStreeetAddress, endStreeetAddress);
+						Thread.sleep(60000);
+						
+						a = getMatrixInfoBody(startStreeetAddress, endStreeetAddress);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+
+				DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory
+						.newInstance();
+				DocumentBuilder docBuilder = docBuilderFactory
+						.newDocumentBuilder();
+				Document doc = docBuilder.parse(a);
+
+				// normalize text representation
+				doc.getDocumentElement().normalize();
+				log.trace("Root element of the doc is {}", doc
+						.getDocumentElement().getNodeName());
+
+				NodeList listOfPersons = doc.getElementsByTagName("element");
+				int totalPersons = listOfPersons.getLength();
+				log.trace("Total no of elements : {}", totalPersons);
+
+				for (int s = 0; s < listOfPersons.getLength(); s++) {
+
+					Node firstPersonNode = listOfPersons.item(s);
+					if (firstPersonNode.getNodeType() == Node.ELEMENT_NODE) {
+
+						Element firstPersonElement = (Element) firstPersonNode;
+
+						// -------
+						NodeList statusList = firstPersonElement
+								.getElementsByTagName("status");
+						Element statusElement = (Element) statusList.item(0);
+
+						NodeList textStatusList = statusElement.getChildNodes();
+						log.trace("status: {}", ((Node) textStatusList.item(0))
+								.getNodeValue().trim());
+
+						if (((Node) textStatusList.item(0)).getNodeValue()
+								.trim().equals("OK")) {
+
+							// -------
+							NodeList lastNameList = firstPersonElement
+									.getElementsByTagName("duration");
+							Element lastNameElement = (Element) lastNameList
+									.item(0);
+
+							NodeList lastNameList2 = lastNameElement
+									.getElementsByTagName("value");
+							Element lastNameElement2 = (Element) lastNameList2
+									.item(0);
+
+							NodeList textLNList = lastNameElement2
+									.getChildNodes();
+							log.trace("duration: {}",
+									((Node) textLNList.item(0)).getNodeValue()
+											.trim());
+
+							drivingTime = Integer.valueOf(((Node) textLNList
+									.item(0)).getNodeValue());
+
+							// -------
+							NodeList firstNameList = firstPersonElement
+									.getElementsByTagName("distance");
+							Element firstNameElement = (Element) firstNameList
+									.item(0);
+
+							NodeList firstNameList2 = firstNameElement
+									.getElementsByTagName("value");
+							Element firstNameElement2 = (Element) firstNameList2
+									.item(0);
+
+							NodeList textFNList = firstNameElement2
+									.getChildNodes();
+							log.trace("distance:{}", ((Node) textFNList.item(0))
+									.getNodeValue().trim());
+
+							drivingDistance = Integer
+									.valueOf(((Node) textFNList.item(0))
+											.getNodeValue());
+
+						}
+					}
+				}
+			} catch (NumberFormatException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (DOMException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (ParserConfigurationException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (SAXException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		if (numberOfAttempts > 3) {
+			log.warn("Geo lookup failed for:{}, {}", startStreeetAddress,
+					endStreeetAddress);
+		}
+		return drivingTime;
+	}
+
 	public Point2D addressToGeocode(String address) {
 		InputStream a;
 		a = getInfoBody(address);
 		Point2D p = new Point2D.Double();
 
 		int numberOfAttempts = 0;
-		if (address.length()<4) {
-			numberOfAttempts=3;
+		if (address.length() < 4) {
+			numberOfAttempts = 3;
 			log.warn("Geo skiped for:{}, address to short", address);
 		}
-		while (numberOfAttempts++<3 && ( p.getX() == 0 || p.getX() == 0) ) {
-		try {
-			if (numberOfAttempts>1) {
-				try {
-					log.warn("Geo lookup failed for:{}, trying the address", address);
-					Thread.sleep(1000);
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+		while (numberOfAttempts++ < 3 && (p.getX() == 0 || p.getX() == 0)) {
+			try {
+				if (numberOfAttempts > 1) {
+					try {
+						log.warn(
+								"Geo lookup failed for:{}, trying the address",
+								address);
+						Thread.sleep(1000);
+						
+						a = getInfoBody(address);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 				}
-			}
-		
-			DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory
-					.newInstance();
-			DocumentBuilder docBuilder = docBuilderFactory.newDocumentBuilder();
-			Document doc = docBuilder.parse(a);
 
-			// normalize text representation
-			doc.getDocumentElement().normalize();
-			log.trace("Root element of the doc is {}", doc.getDocumentElement()
-					.getNodeName());
+				DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory
+						.newInstance();
+				DocumentBuilder docBuilder = docBuilderFactory
+						.newDocumentBuilder();
+				Document doc = docBuilder.parse(a);
 
-			NodeList listOfPersons = doc.getElementsByTagName("location");
-			int totalPersons = listOfPersons.getLength();
-			log.trace("Total no of people : {}", totalPersons);
+				// normalize text representation
+				doc.getDocumentElement().normalize();
+				log.trace("Root element of the doc is {}", doc
+						.getDocumentElement().getNodeName());
 
-			for (int s = 0; s < listOfPersons.getLength(); s++) {
+				NodeList listOfPersons = doc.getElementsByTagName("location");
+				int totalPersons = listOfPersons.getLength();
+				log.trace("Total no of people : {}", totalPersons);
 
-				Node firstPersonNode = listOfPersons.item(s);
-				if (firstPersonNode.getNodeType() == Node.ELEMENT_NODE) {
+				for (int s = 0; s < listOfPersons.getLength(); s++) {
 
-					Element firstPersonElement = (Element) firstPersonNode;
+					Node firstPersonNode = listOfPersons.item(s);
+					if (firstPersonNode.getNodeType() == Node.ELEMENT_NODE) {
 
-					// -------
-					NodeList lastNameList = firstPersonElement
-							.getElementsByTagName("lng");
-					Element lastNameElement = (Element) lastNameList.item(0);
+						Element firstPersonElement = (Element) firstPersonNode;
 
-					NodeList textLNList = lastNameElement.getChildNodes();
-					log.trace("lng: {}", ((Node) textLNList.item(0))
-							.getNodeValue().trim());
+						// -------
+						NodeList lastNameList = firstPersonElement
+								.getElementsByTagName("lng");
+						Element lastNameElement = (Element) lastNameList
+								.item(0);
 
-					Double x = Double.valueOf(((Node) textLNList.item(0))
-							.getNodeValue());
+						NodeList textLNList = lastNameElement.getChildNodes();
+						log.trace("lng: {}", ((Node) textLNList.item(0))
+								.getNodeValue().trim());
 
-					// -------
-					NodeList firstNameList = firstPersonElement
-							.getElementsByTagName("lat");
-					Element firstNameElement = (Element) firstNameList.item(0);
+						Double x = Double.valueOf(((Node) textLNList.item(0))
+								.getNodeValue());
 
-					NodeList textFNList = firstNameElement.getChildNodes();
-					log.trace("lat:{}", ((Node) textFNList.item(0))
-							.getNodeValue().trim());
+						// -------
+						NodeList firstNameList = firstPersonElement
+								.getElementsByTagName("lat");
+						Element firstNameElement = (Element) firstNameList
+								.item(0);
 
-					Double y = Double.valueOf(((Node) textFNList.item(0))
-							.getNodeValue());
+						NodeList textFNList = firstNameElement.getChildNodes();
+						log.trace("lat:{}", ((Node) textFNList.item(0))
+								.getNodeValue().trim());
 
-					p.setLocation(x, y);
+						Double y = Double.valueOf(((Node) textFNList.item(0))
+								.getNodeValue());
 
+						p.setLocation(x, y);
+
+					}
 				}
+			} catch (NumberFormatException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (DOMException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (ParserConfigurationException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (SAXException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
-		} catch (NumberFormatException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (DOMException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (ParserConfigurationException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (SAXException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
 		}
-		}
-		if (numberOfAttempts>3) {
+		if (numberOfAttempts > 3) {
 			log.warn("Geo lookup failed for:{}", address);
 		}
 		return p;
@@ -324,6 +465,48 @@ public class Geocode implements BeanRequest, DisposableBean {
 		String paramsUTF = URLEncodedUtils.format(params, "utf-8");
 
 		String uri = "http://maps.googleapis.com/maps/api/geocode/xml?"
+				+ paramsUTF;
+
+		log.trace("calling: {}", uri);
+
+		HttpGet method = new HttpGet(uri);
+
+		DefaultHttpClient client = new DefaultHttpClient();
+
+		HttpHost targetHost = new HttpHost("maps.googleapis.com");
+
+		InputStream body = null;
+		try {
+			HttpResponse httpResponse = client.execute(targetHost, method);
+			body = httpResponse.getEntity().getContent();
+		} catch (ClientProtocolException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IllegalStateException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		return body;
+	}
+
+	private static InputStream getMatrixInfoBody(String startStreeetAddress,
+			String endStreeetAddress) {
+
+		// http://maps.googleapis.com/maps/api/distancematrix/xml?origins=Vancouver+BC&destinations=San+Francisco&units=imperial&sensor=false
+
+		List<NameValuePair> params = new LinkedList<NameValuePair>();
+		params.add(new BasicNameValuePair("origins", startStreeetAddress));
+		params.add(new BasicNameValuePair("destinations", endStreeetAddress));
+		params.add(new BasicNameValuePair("units", "imperial"));
+		params.add(new BasicNameValuePair("sensor", "false"));
+
+		String paramsUTF = URLEncodedUtils.format(params, "utf-8");
+
+		String uri = "http://maps.googleapis.com/maps/api/distancematrix/xml?"
 				+ paramsUTF;
 
 		log.trace("calling: {}", uri);

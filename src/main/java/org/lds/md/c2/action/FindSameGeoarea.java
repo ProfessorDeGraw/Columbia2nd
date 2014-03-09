@@ -26,13 +26,17 @@ public class FindSameGeoarea implements BeanRequest, DisposableBean {
 			String name = parms.get(1);
 			
 			List<List<String>> geocode = database.new ReaderBuilder().table(table).row(name).column("geoarea").go();
+			
+			if (geocode.size() < 1 ) {
+				return "Geo area name not found or geodata is not loaded, try loading geodata";	
+			}
 			String areaName = geocode.get(0).get(4);
 			
 			List<List<String>> inArea = database.new ReaderBuilder().table(table).column("geoarea").value(areaName).go();
 	
 			StringBuilder sb = new StringBuilder();
 			
-			List<List<String>> thisFamily = database.new ReaderBuilder().table(table).row(name).column("Family Address").go();
+			List<List<String>> thisFamily = database.new ReaderBuilder().table(table).row(name).column("geocode").go();
 			String thisFamilyAddress = thisFamily.get(0).get(4);
 			
 			sb.append("https://maps.google.com/maps?");
@@ -43,7 +47,7 @@ public class FindSameGeoarea implements BeanRequest, DisposableBean {
 			for (List<String> i : inArea) {
 				String familyName = i.get(1);
 				
-				List<List<String>> family = database.new ReaderBuilder().table(table).row(familyName).column("Family Address").go();
+				List<List<String>> family = database.new ReaderBuilder().table(table).row(familyName).column("geocode").go();
 				String familyAddress = family.get(0).get(4);
 				 
 				sb.append("++to:"+ familyAddress.trim());
