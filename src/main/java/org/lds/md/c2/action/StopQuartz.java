@@ -11,22 +11,22 @@ import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-@Component("StopQuartz")
+//@Component("StopQuartz")
 public class StopQuartz implements BeanRequest, DisposableBean {
 	private static final Logger log = LoggerFactory.getLogger(StopQuartz.class);
 	
-	@Autowired
-	QuartzManager quartzManager = null;
+	//@Autowired
+	//QuartzManager quartzManager = null;
 	
 	public void setQuartzManager(QuartzManager quartzManager) {
-		this.quartzManager = quartzManager;
+		//this.quartzManager = quartzManager;
 	}
 
 	@Override
 	public Object get(List<String> parms) {
 		Helper.fixParms(parms);
 
-		quartzManager.stop();
+		//quartzManager.stop();
 		
 		log.warn("Quartz Stop");
 		
@@ -35,9 +35,9 @@ public class StopQuartz implements BeanRequest, DisposableBean {
 
 	@Override
 	public void destroy() throws Exception {
-		if ( quartzManager != null ) {
-			quartzManager.stop();
-		}
+		//if ( quartzManager != null ) {
+		//	quartzManager.stop();
+		//}
 	}
 
 }

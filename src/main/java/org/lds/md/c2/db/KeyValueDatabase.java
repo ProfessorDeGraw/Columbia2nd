@@ -8,12 +8,19 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.GregorianCalendar;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.regex.Pattern;
 
+import org.apache.commons.httpclient.Header;
+import org.apache.commons.httpclient.HeaderElement;
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.HttpMethod;
+import org.apache.commons.httpclient.methods.GetMethod;
+import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
@@ -821,11 +828,95 @@ public class KeyValueDatabase {
 
 	private static InputStream getInfoBody(String USR, String PWD)
 			throws ClientProtocolException, IOException {
+		/* WARNING: https requires that the SSL certificates served by the server
+	       * be located in the local trust store otherwise request will fail with 
+	       * a certificate exception.
+	       */
+	       String authUrl = "https://lds.org/login.html"; 
+	       HttpClient client = new HttpClient();
+	       client.getParams().setCookiePolicy(CookiePolicy.BROWSER_COMPATIBILITY);
+	 
+	       PostMethod auth = new PostMethod(authUrl);
+	       auth.addParameter("username", USR);
+	       auth.addParameter("password", PWD);
+	 
+	       auth.setFollowRedirects(false);
+	       int respCode = client.executeMethod(auth);
+	       //Header location = auth.getResponseHeader("location");
+	       Header cookieHrd = auth.getResponseHeader("set-cookie");
+	 
+	       System.out.println("called: " + authUrl);
+	       System.out.println("response: " + respCode);
+	       //System.out.println("location: " + location.toExternalForm());
+	 
+	 
+	       HeaderElement[] elements = cookieHrd.getElements();
+	       for (int i=0; elements != null && i<elements.length; i++) {
+	           System.out.println("Received set-cookie: " + elements[i].getName() + "=" 
+	                   + elements[i].getValue());
+	       }
+	       String value = cookieHrd.getValue();
+	       String[] parts = value.split(";");
+	       String ssoToken = parts[0].split("=")[1];
+	 
+	       System.out.println("ssoToken: " + ssoToken);
+	       System.out.println();
+	 
+	       if (respCode != 200) {
+	           System.out.println("--Auth failed--");
+	           return null;
+	       }
+	 
+	       // ------ now access restricted resource -------
+	 
+	       long curr = System.currentTimeMillis();
+	       GregorianCalendar cal = new GregorianCalendar();
+	       cal.set(cal.get(GregorianCalendar.YEAR),
+	           cal.get(GregorianCalendar.MONTH),
+	           cal.get(GregorianCalendar.DATE),
+	           0,  // hours
+	           0,  // minutes
+	           0); // seconds
+	       long startOfToday = cal.getTimeInMillis();
+	       long totalDaysDesired = 30;
+	       long daysOut = startOfToday + totalDaysDesired * 24L * 60L * 60L * 1000L;
+	 
+	       String uri = "https://www.lds.org/directory/services/ludrs/unit/member-list/200239/csv";
+	       System.out.println("calling: " + uri);
+	 
+	       HttpMethod method = new GetMethod(uri);
+	       method.addRequestHeader("cookie", "ObSSOCookie=" + ssoToken);
+	       method.setFollowRedirects(false);
+	       int status = client.executeMethod(method);
+	       InputStream body = method.getResponseBodyAsStream();
+	       Header ctype = method.getResponseHeader("content-type");
+	       String val = ctype.getValue();
+	       System.out.println("Content-Type: " + val);
+	 
+	       // now convert to characters. utf-8 is specified due to the content type 
+	       // header's specified charset, should actually parse and used that but
+	       // I'll take a short cut for now
+	       //InputStreamReader reader = new InputStreamReader(body, "utf-8");
+	       //char[] chars = new char[1024];
+	       //int charsRead = reader.read(chars);
+	       //StringWriter sw = new StringWriter();
+	 
+	       //while (charsRead != -1) {
+	       //    sw.write(chars, 0, charsRead);
+	       //    charsRead = reader.read(chars);
+	       //}
+	 
+	       //System.out.println(sw.toString());
+		
+		return body;
+		
+		
 		/*
 		 * WARNING: https requires that the SSL certificates served by the
 		 * server be located in the local trust store otherwise request will
 		 * fail with a certificate exception.
 		 */
+		/*
 
 		String authUrl = "https://www.lds.org/login.html";
 		DefaultHttpClient authClient = new DefaultHttpClient();
@@ -848,6 +939,7 @@ public class KeyValueDatabase {
 		HttpHost AuthTargetHost = new HttpHost("lds.org");
 		HttpResponse AuthHttpResponse = authClient
 				.execute(AuthTargetHost, auth);
+		
 
 		// int respCode = client.executeMethod(auth);
 		// Header location = auth.getResponseHeader("location");
@@ -910,6 +1002,17 @@ public class KeyValueDatabase {
 
 		System.out.println("calling: " + uri);
 
+		HttpMethod method = new GetMethod(uri);
+		method.addRequestHeader("cookie", "ObSSOCookie=" + ssoToken);
+		method.setFollowRedirects(false);
+		int status = authClient.executeMethod(method);
+		InputStream body = method.getResponseBodyAsStream();
+		Header ctype = method.getResponseHeader("content-type");
+		String val = ctype.getValue();
+		System.out.println("Content-Type: " + val);
+	       
+	       /*
+		
 		HttpGet method = new HttpGet(uri);
 		// method.addHeader("cookie", "ObSSOCookie=" + ssoToken);
 
@@ -920,8 +1023,8 @@ public class KeyValueDatabase {
 		client.setCookieStore(authClient.getCookieStore());
 
 		HttpHost targetHost = new HttpHost("www.lds.org");
-		HttpResponse httpResponse = client.execute(targetHost, method);
-
+		HttpResponse httpResponse = client.execute(targetHost, method); 
+		
 		// int status = client.executeMethod(method);
 		// InputStream body = method.getResponseBodyAsStream();
 		InputStream body = httpResponse.getEntity().getContent();
@@ -929,8 +1032,12 @@ public class KeyValueDatabase {
 		// String val = ctype.
 		// System.out.println("Content-Type: " + val);
 		// return null;
+		 
+		 
 
 		return body;
+		
+		*/
 	}
 
 	public static void loadMemberDataFileSimple(KeyValueDatabase database,

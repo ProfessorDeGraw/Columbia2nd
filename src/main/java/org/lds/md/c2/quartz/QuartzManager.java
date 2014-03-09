@@ -1,19 +1,19 @@
 package org.lds.md.c2.quartz;
 
-import org.quartz.JobBuilder;
-import org.quartz.JobDetail;
-import org.quartz.Scheduler;
-import org.quartz.SchedulerException;
-import org.quartz.SimpleScheduleBuilder;
-import org.quartz.Trigger;
-import org.quartz.TriggerBuilder;
-import org.quartz.impl.StdSchedulerFactory;
+//import org.quartz.JobBuilder;
+//import org.quartz.JobDetail;
+//import org.quartz.Scheduler;
+//import org.quartz.SchedulerException;
+//import org.quartz.SimpleScheduleBuilder;
+//import org.quartz.Trigger;
+//import org.quartz.TriggerBuilder;
+//import org.quartz.impl.StdSchedulerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-@Component("QuartzManager")
-public class QuartzManager  {
+//@Component("QuartzManager")
+public class QuartzManager  { /*
 	private static final Logger log = LoggerFactory.getLogger(QuartzManager.class);
 	
 	private  Scheduler scheduler = null;
@@ -66,5 +66,5 @@ public class QuartzManager  {
 			scheduler=null;
 			log.warn("Quartz Deleted");
 		}
-	}
+	} */
 }

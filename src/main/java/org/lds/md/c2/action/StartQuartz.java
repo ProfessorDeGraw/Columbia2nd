@@ -11,15 +11,15 @@ import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-@Component("StartQuartz")
+//@Component("StartQuartz")
 public class StartQuartz implements BeanRequest, DisposableBean {
 	private static final Logger log = LoggerFactory.getLogger(StartQuartz.class);
 	
-	@Autowired
-	QuartzManager quartzManager = null;
+	//@Autowired
+	//QuartzManager quartzManager = null;
 	
 	public void setQuartzManager(QuartzManager quartzManager) {
-		this.quartzManager = quartzManager;
+		//this.quartzManager = quartzManager;
 	}
 
 	@Override
@@ -31,7 +31,7 @@ public class StartQuartz implements BeanRequest, DisposableBean {
 			
 			log.warn(time);
 			
-			quartzManager.start(Integer.parseInt(time));
+			//quartzManager.start(Integer.parseInt(time));
 			
 			return "Quartz Start:" + time;
 		}
@@ -40,9 +40,9 @@ public class StartQuartz implements BeanRequest, DisposableBean {
 
 	@Override
 	public void destroy() throws Exception {
-		if (quartzManager !=null) { 
-			quartzManager.stop();
-		}
+		//if (quartzManager !=null) { 
+		//	quartzManager.stop();
+		//}
 	}
 
 }
