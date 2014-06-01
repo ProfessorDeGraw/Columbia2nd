@@ -1,4 +1,4 @@
-package org.lds.md.c2;
+package org.lds.md.c2.web;
 
 import java.io.IOException;
 import java.util.Arrays;

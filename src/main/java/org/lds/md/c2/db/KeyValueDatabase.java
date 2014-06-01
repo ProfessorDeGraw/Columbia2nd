@@ -1,4 +1,4 @@
-package org.lds.md.c2;
+package org.lds.md.c2.db;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -8,12 +8,19 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.GregorianCalendar;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.regex.Pattern;
 
+import org.apache.commons.httpclient.Header;
+import org.apache.commons.httpclient.HeaderElement;
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.HttpMethod;
+import org.apache.commons.httpclient.methods.GetMethod;
+import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
@@ -34,167 +41,12 @@ import com.sleepycat.bind.tuple.TupleInput;
 import com.sleepycat.bind.tuple.TupleOutput;
 import com.sleepycat.collections.StoredSortedMap;
 import com.sleepycat.collections.TransactionRunner;
-import com.sleepycat.collections.TransactionWorker;
 import com.sleepycat.je.Database;
 import com.sleepycat.je.DatabaseConfig;
 import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.Environment;
 import com.sleepycat.je.EnvironmentConfig;
 import com.sleepycat.je.EnvironmentLockedException;
-
-class KeyValueDatabaseReader implements TransactionWorker {
-
-	KeyValueDatabase db;
-
-	KeyValueDatabaseReader(KeyValueDatabase myDb) {
-		db = myDb;
-	}
-
-	@Override
-	public void doWork() throws Exception {
-		// TODO Auto-generated method stub
-		db.readAllKeys();
-	}
-
-}
-
-class KeyValueDatabaseAllKeysReader implements TransactionWorker {
-
-	KeyValueDatabase db;
-	List<List<String>> keys;
-	String table, column;
-
-	KeyValueDatabaseAllKeysReader(KeyValueDatabase myDb, String myTable,
-			String myColumn) {
-		db = myDb;
-		table = myTable;
-		column = myColumn;
-	}
-
-	public List<List<String>> getAllKeys() {
-		return keys;
-	}
-
-	@Override
-	public void doWork() throws Exception {
-		// TODO Auto-generated method stub
-		keys = db.allKeys(table, column);
-	}
-}
-
-class KeyValueDatabaseWriter implements TransactionWorker {
-
-	KeyValueDatabase myDb;
-	private final String myDatabaseLoadFile;
-
-	KeyValueDatabaseWriter(KeyValueDatabase db, String databaseLoadFile) {
-		myDb = db;
-		myDatabaseLoadFile = databaseLoadFile;
-	}
-
-	@Override
-	public void doWork() throws Exception {
-		// TODO Auto-generated method stub
-		myDb.writeManyKeysFromFile(myDatabaseLoadFile);
-	}
-
-}
-
-class KeyValueDatabaseWrite implements TransactionWorker {
-
-	KeyValueDatabase myDb;
-
-	String myTable, myRow, myColumn, myValue;
-
-	KeyValueDatabaseWrite(KeyValueDatabase db, String table, String row,
-			String column, String value) {
-		myDb = db;
-		myTable = table;
-		myRow = row;
-		myColumn = column;
-		myValue = value;
-	}
-
-	@Override
-	public void doWork() throws Exception {
-		// TODO Auto-generated method stub
-		myDb.writeKey(myTable, myRow, myColumn, myValue);
-	}
-
-}
-
-class KeyValueDatabaseSimpleWrite implements TransactionWorker {
-
-	KeyValueDatabase myDb;
-
-	String myTable, myRow, myColumn, myTime, myValue;
-
-	KeyValueDatabaseSimpleWrite(KeyValueDatabase db, String table, String row,
-			String column, String time, String value) {
-		myDb = db;
-		myTable = table;
-		myRow = row;
-		myColumn = column;
-		myTime = time;
-		myValue = value;
-	}
-
-	@Override
-	public void doWork() throws Exception {
-		// TODO Auto-generated method stub
-		myDb.writeKey(myTable, myRow, myColumn, myTime, myValue);
-	}
-
-}
-
-class KeyValueDatabaseRemove implements TransactionWorker {
-
-	KeyValueDatabase myDb;
-
-	String myTable, myRow = null, myColumn = null;
-
-	KeyValueDatabaseRemove(KeyValueDatabase db, String table, String row,
-			String column) {
-		myDb = db;
-		myTable = table;
-		myRow = row;
-		myColumn = column;
-	}
-
-	public KeyValueDatabaseRemove(KeyValueDatabase db, String table) {
-		myDb = db;
-		myTable = table;
-	}
-
-	@Override
-	public void doWork() throws Exception {
-		// TODO Auto-generated method stub
-		if (myRow == null && myColumn == null) {
-			myDb.removeKey(myTable);
-		} else {
-			myDb.removeKey(myTable, myRow, myColumn);
-		}
-	}
-
-}
-
-class KeyValueDatabaseRemoveAll implements TransactionWorker {
-
-	KeyValueDatabase myDb;
-
-	String myTable, myRow, myColumn;
-
-	KeyValueDatabaseRemoveAll(KeyValueDatabase db) {
-		myDb = db;
-	}
-
-	@Override
-	public void doWork() throws Exception {
-		// TODO Auto-generated method stub
-		myDb.removeAllKeys();
-	}
-
-}
 
 public class KeyValueDatabase {
 
@@ -210,14 +62,202 @@ public class KeyValueDatabase {
 	private Database db;
 	private SortedMap<SimpleKey, String> map;
 
-	private StringBuilder dbMessage = new StringBuilder(
-			"Database is not ready.");
-
 	private String databaseLoadFile = "/tmp/occurrence.txt";
 	private String databaseLocation = "/tmp/berkeleydb";
 
 	public void setDatabaseLoadFile(String databaseLoadFile) {
 		this.databaseLoadFile = databaseLoadFile;
+	}
+	
+	public class ReaderBuilder {
+		String table = null, row = null, column = null, value = null,
+				time = null, data = null;
+		
+		public ReaderBuilder table(String value) {
+			table = value;
+			return this;
+		}
+
+		public ReaderBuilder row(String value) {
+			row = value;
+			return this;
+		}
+
+		public ReaderBuilder column(String value) {
+			column = value;
+			return this;
+		}
+
+		public ReaderBuilder value(String value) {
+			this.value = value;
+			return this;
+		}
+
+		public ReaderBuilder time(String value) {
+			time = value;
+			return this;
+		}
+
+		public ReaderBuilder data(String value) {
+			data = value;
+			return this;
+		}
+
+		public List<List<String>> go() {
+			List<List<String>> retKeys = null;
+
+			if (KeyValueDatabase.this.databaseOpen == false) {
+				openDatabase();
+			}
+
+			TransactionRunner runner = new TransactionRunner(env);
+			try {
+				// open and access the database within a transaction
+				KeyValueReader reader = new KeyValueReader.Builder(KeyValueDatabase.this).table(table).row(row).column(column).value(value).time(time).data(data).build();
+				try {
+					runner.run(reader);
+					retKeys = reader.getAllKeys();
+				} catch (DatabaseException e) {
+					log.error("Database read failed!", e);
+				} catch (Exception e) {
+					log.error("Database read failed!", e);
+				}
+			} finally {
+				// close the database outside the transaction
+				try {
+					// TODO Auto-generated catch block
+					// this.close();
+				} catch (Exception e) {
+					log.error("Database read failed!", e);
+				}
+			}
+
+			return retKeys;
+		}
+	}
+	
+	public class RemoverBuilder {
+		String table = null, row = null, column = null, value = null,
+				time = null, data = null;
+		
+		public RemoverBuilder table(String value) {
+			table = value;
+			return this;
+		}
+
+		public RemoverBuilder row(String value) {
+			row = value;
+			return this;
+		}
+
+		public RemoverBuilder column(String value) {
+			column = value;
+			return this;
+		}
+
+		public RemoverBuilder value(String value) {
+			this.value = value;
+			return this;
+		}
+
+		public RemoverBuilder time(String value) {
+			time = value;
+			return this;
+		}
+
+		public RemoverBuilder data(String value) {
+			data = value;
+			return this;
+		}
+
+		public void go() {
+			if (databaseOpen == false) {
+				openDatabase();
+			}
+
+			TransactionRunner runner = new TransactionRunner(env);
+			try {
+				// open and access the database within a transaction
+				KeyValueRemover writer = new KeyValueRemover.Builder(KeyValueDatabase.this).table(table).row(row).column(column).value(value).time(time).data(data).build();
+				try {
+					runner.run(writer);
+				} catch (DatabaseException e) {
+					log.error("Database run failed!", e);
+				} catch (Exception e) {
+					log.error("Database run failed!", e);
+				}
+			} finally {
+				// close the database outside the transaction
+				try {
+					// TODO Auto-generated catch block
+					// this.close();
+				} catch (Exception e) {
+					log.error("Database run failed!", e);
+				}
+			}
+		}
+	}
+	
+	public class WriterBuilder {
+		String table = "", row = "", column = "", value = "",
+				time = "", data = "";
+		
+		public WriterBuilder table(String value) {
+			table = value;
+			return this;
+		}
+
+		public WriterBuilder row(String value) {
+			row = value;
+			return this;
+		}
+
+		public WriterBuilder column(String value) {
+			column = value;
+			return this;
+		}
+
+		public WriterBuilder value(String value) {
+			this.value = value;
+			return this;
+		}
+
+		public WriterBuilder time(String value) {
+			time = value;
+			return this;
+		}
+
+		public WriterBuilder data(String value) {
+			data = value;
+			return this;
+		}
+
+		public void go() {
+			if (databaseOpen == false) {
+				openDatabase();
+			}
+
+			TransactionRunner runner = new TransactionRunner(env);
+			try {
+				// open and access the database within a transaction
+				KeyValueWriter writer = new KeyValueWriter.Builder(KeyValueDatabase.this).table(table).row(row).column(column).time(time).value(value).data(data).build();
+				try {
+					runner.run(writer);
+				} catch (DatabaseException e) {
+					log.error("Database run failed!", e);
+				} catch (Exception e) {
+					log.error("Database run failed!", e);
+				}
+			} finally {
+				// close the database outside the transaction
+				try {
+					// TODO Auto-generated catch block
+					// this.close();
+				} catch (Exception e) {
+					log.error("Database run failed!", e);
+				}
+			}
+		}
 	}
 
 	public void removeAllKeys() {
@@ -229,9 +269,11 @@ public class KeyValueDatabase {
 		while (iter.hasNext()) {
 			Map.Entry<SimpleKey, String> entry = iter.next();
 			String value = map.remove(entry.getKey());
-			log.trace("removed:" + entry.getKey().toString() + ":" + value);
+			log.warn("removed:{}:{}",entry.getKey().toString(),value);
 		}
 		iter = null;
+		
+		log.warn("Data drop done");
 	}
 
 	public void removeKey(String myTable) {
@@ -268,34 +310,31 @@ public class KeyValueDatabase {
 	}
 
 	public void writeKey(String myTable, String myRow, String myColumn,
-			String myValue) {
-		map.put(new SimpleKey(myTable, myRow, myColumn), myValue);
-	}
-
-	public void writeKey(String myTable, String myRow, String myColumn,
-			String myTime, String myValue) {
-		map.put(new SimpleKey(myTable, myRow, myColumn, myTime), myValue);
+			String myTime, String myValue, String myData) {
+		log.trace("{} adding {} in {} as {} with {}", new Object[] {myTable, myRow, myColumn, myValue, myData});
+		try {
+			map.put( new SimpleKey.Builder().table(myTable).row(myRow).column(myColumn).time(myTime).value(myValue).build() , myData);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			log.warn("Database add failed", e);
+		}
 	}
 
 	public void setDatabaseLocation(String databaseLocation) {
 		this.databaseLocation = databaseLocation;
 	}
 
-	public String getDbMessage() {
-		return dbMessage.toString();
-	}
-
 	public void databaseCycle() {
 		openDatabase();
 
 		actionWriterInitDB();
-		actionReader();
+		this.new ReaderBuilder().go();
 
 		closeDatabase();
 	}
 
 	private void openDatabase() {
-		log.trace("Staring to setup database");
+		log.warn("Staring to setup database");
 
 		// environment is transactional
 		EnvironmentConfig envConfig = new EnvironmentConfig();
@@ -308,7 +347,6 @@ public class KeyValueDatabase {
 			env = new Environment(new File(databaseLocation), envConfig);
 
 			// create the application and run a transaction
-			// HelloDatabaseWorld worker = new KeyValueDatabase(env);
 			try {
 				this.setupDatabase(env);
 
@@ -328,51 +366,6 @@ public class KeyValueDatabase {
 		actionWriterInitDB();
 	}
 
-	public List<List<String>> actionAllKeys() {
-		return actionAllKeysByTable(null);
-	}
-
-	public List<List<String>> actionAllKeysByTable(String table) {
-		return actionAllKeysByTableByColumn(table, null);
-	}
-
-	public List<List<String>> actionAllKeysByTableByColumn(String table,
-			String column) {
-
-		List<List<String>> retKeys = null;
-
-		if (databaseOpen == false) {
-			openDatabase();
-		}
-
-		TransactionRunner runner = new TransactionRunner(env);
-		try {
-			// open and access the database within a transaction
-			// KeyValueDatabaseWriter writer = new KeyValueDatabaseWriter(this);
-			KeyValueDatabaseAllKeysReader reader = new KeyValueDatabaseAllKeysReader(
-					this, table, column);
-			try {
-				// runner.run(writer);
-				runner.run(reader);
-				retKeys = reader.getAllKeys();
-			} catch (DatabaseException e) {
-				log.error("Database read failed!", e);
-			} catch (Exception e) {
-				log.error("Database read failed!", e);
-			}
-		} finally {
-			// close the database outside the transaction
-			try {
-				// TODO Auto-generated catch block
-				// this.close();
-			} catch (Exception e) {
-				log.error("Database read failed!", e);
-			}
-		}
-
-		return retKeys;
-	}
-
 	public void actionWriterInitDB() {
 		if (databaseOpen == false) {
 			openDatabase();
@@ -383,10 +376,8 @@ public class KeyValueDatabase {
 			// open and access the database within a transaction
 			KeyValueDatabaseWriter writer = new KeyValueDatabaseWriter(this,
 					databaseLoadFile);
-			// KeyValueDatabaseReader reader = new KeyValueDatabaseReader(this);
 			try {
 				runner.run(writer);
-				// runner.run(reader);
 			} catch (DatabaseException e) {
 				log.error("Database run failed!", e);
 			} catch (Exception e) {
@@ -399,35 +390,6 @@ public class KeyValueDatabase {
 				// this.close();
 			} catch (Exception e) {
 				log.error("Database run failed!", e);
-			}
-		}
-	}
-
-	public void actionReader() {
-		if (databaseOpen == false) {
-			openDatabase();
-		}
-
-		TransactionRunner runner = new TransactionRunner(env);
-		try {
-			// open and access the database within a transaction
-			// KeyValueDatabaseWriter writer = new KeyValueDatabaseWriter(this);
-			KeyValueDatabaseReader reader = new KeyValueDatabaseReader(this);
-			try {
-				// runner.run(writer);
-				runner.run(reader);
-			} catch (DatabaseException e) {
-				log.error("Database read failed!", e);
-			} catch (Exception e) {
-				log.error("Database read failed!", e);
-			}
-		} finally {
-			// close the database outside the transaction
-			try {
-				// TODO Auto-generated catch block
-				// this.close();
-			} catch (Exception e) {
-				log.error("Database read failed!", e);
 			}
 		}
 	}
@@ -445,7 +407,7 @@ public class KeyValueDatabase {
 			// TODO Auto-generated method stub
 			String value = input.readString();
 
-			return new SimpleKey(value);
+			return new SimpleKey.Builder().serial(value).build();
 		}
 
 		@Override
@@ -513,7 +475,7 @@ public class KeyValueDatabase {
 	/** Performs work within a transaction. */
 	public void doWork() {
 		writeManyKeysFromFile("/tmp/occurrence.txt");
-		readAllKeys();
+		getKeys(null, null, null, null, null, null);
 	}
 
 	/** Writes and reads the database via the Map. */
@@ -531,15 +493,7 @@ public class KeyValueDatabase {
 			while (line != null) {
 				String parts[] = tab.split(line);
 				try {
-					// map.put(parts[0], line);
-					// int i = 0;
-					// for (String s : parts) {
-					map.put(new SimpleKey(parts[0], parts[1], parts[2]),
-							parts[3]);
-					// i++;
-					// }
-					// kvp += i;
-
+					map.put(new SimpleKey.Builder().table(parts[0]).row(parts[1]).column(parts[2]).build(),parts[3]);
 				} catch (NumberFormatException e) {
 					log.error("Key parse number format failed!", e);
 				}
@@ -566,24 +520,32 @@ public class KeyValueDatabase {
 		}
 	}
 
-	public void readAllKeys() {
-		// log.trace("Reading data");
-		// Iterator<Map.Entry<String, String>> iter = map.tailMap("47874585:")
-		// .entrySet().iterator();
+	/*
+	public List<List<String>> readAllKeys() {
 		Iterator<Map.Entry<SimpleKey, String>> iter = map.entrySet().iterator();
-		dbMessage = new StringBuilder();
+		
+		List<List<String>> keys = new ArrayList<List<String>>();
+		
 		while (iter.hasNext()) {
 			Map.Entry<SimpleKey, String> entry = iter.next();
-			// if (!entry.getKey().startsWith("47874585:")) {
-			// break;
-			// }
-			dbMessage.append(entry.getKey().toString() + entry.getValue()
-					+ "<br>" + "\n");
-			// log.trace(entry.getKey().toString() + entry.getValue());
+			
+			List<String> key = new ArrayList<String>();
+			
+			key.add(entry.getKey().getTable());
+			key.add(entry.getKey().getRow());
+			key.add(entry.getKey().getColumn());
+			key.add(entry.getKey().getValue());
+			key.add(entry.getKey().getTime());
+			key.add(entry.getValue());
+			keys.add(key);
 		}
 		iter = null;
+		
+		return keys;
 	}
+	*/
 
+	/*
 	public List<List<String>> allKeys(String table, String column) {
 		if (databaseOpen == false) {
 			openDatabase();
@@ -610,129 +572,70 @@ public class KeyValueDatabase {
 
 		return keys;
 	}
-
-	public void actionAddKey(String table, String row, String column,
-			String value) {
+	*/
+	
+	/*
+	public List<List<String>> allKeys(String table, String row, String column) {
 		if (databaseOpen == false) {
 			openDatabase();
 		}
 
-		TransactionRunner runner = new TransactionRunner(env);
-		try {
-			// open and access the database within a transaction
-			KeyValueDatabaseWrite writer = new KeyValueDatabaseWrite(this,
-					table, row, column, value);
-			// KeyValueDatabaseReader reader = new KeyValueDatabaseReader(this);
-			try {
-				runner.run(writer);
-				// runner.run(reader);
-			} catch (DatabaseException e) {
-				log.error("Database run failed!", e);
-			} catch (Exception e) {
-				log.error("Database run failed!", e);
-			}
-		} finally {
-			// close the database outside the transaction
-			try {
-				// TODO Auto-generated catch block
-				// this.close();
-			} catch (Exception e) {
-				log.error("Database run failed!", e);
+		List<List<String>> keys = new ArrayList<List<String>>();
+
+		Iterator<Map.Entry<SimpleKey, String>> iter = map.entrySet().iterator();
+		while (iter.hasNext()) {
+			Map.Entry<SimpleKey, String> entry = iter.next();
+			if ((table == null || entry.getKey().getTable().equals(table)) && ( row == null || entry.getKey().getRow().trim()
+					.equals(row.trim()) )
+					&& (column == null || entry.getKey().getColumn()
+							.equals(column))) {
+				List<String> key = new ArrayList<String>();
+				key.add(entry.getKey().getTable());
+				key.add(entry.getKey().getRow());
+				key.add(entry.getKey().getColumn());
+				key.add(entry.getKey().getTime());
+				key.add(entry.getValue());
+				keys.add(key);
 			}
 		}
-	}
+		iter = null;
 
-	public void actionRemoveKey(String table) {
+		return keys;
+	}
+	*/
+	
+	public List<List<String>> getKeys(String table, String row, String column, String time,
+			String value, String data) {
 		if (databaseOpen == false) {
 			openDatabase();
 		}
 
-		TransactionRunner runner = new TransactionRunner(env);
-		try {
-			// open and access the database within a transaction
-			KeyValueDatabaseRemove writer = new KeyValueDatabaseRemove(this,
-					table);
-			// KeyValueDatabaseReader reader = new KeyValueDatabaseReader(this);
-			try {
-				runner.run(writer);
-				// runner.run(reader);
-			} catch (DatabaseException e) {
-				log.error("Database run failed!", e);
-			} catch (Exception e) {
-				log.error("Database run failed!", e);
-			}
-		} finally {
-			// close the database outside the transaction
-			try {
-				// TODO Auto-generated catch block
-				// this.close();
-			} catch (Exception e) {
-				log.error("Database run failed!", e);
+		List<List<String>> keys = new ArrayList<List<String>>();
+
+		Iterator<Map.Entry<SimpleKey, String>> iter = map.entrySet().iterator();
+		while (iter.hasNext()) {
+			Map.Entry<SimpleKey, String> entry = iter.next();
+			if ( (table == null || entry.getKey().getTable().equals(table)  )
+					&& (row == null || entry.getKey().getRow().equals(row)) 
+					&& (column == null || entry.getKey().getColumn().equals(column))
+					&& (time == null || entry.getKey().getTime().equals(time))
+					&& (value == null || entry.getKey().getValue().equals(value))
+							&& ( data == null || entry.getValue().equals(data)) ) {
+				List<String> key = new ArrayList<String>();
+				key.add(entry.getKey().getTable());
+				key.add(entry.getKey().getRow());
+				key.add(entry.getKey().getColumn());
+				key.add(entry.getKey().getTime());
+				key.add(entry.getKey().getValue());
+				key.add(entry.getValue());
+				keys.add(key);
 			}
 		}
+		iter = null;
+
+		return keys;
 	}
-
-	public void actionRemoveKey(String table, String row, String column) {
-		if (databaseOpen == false) {
-			openDatabase();
-		}
-
-		TransactionRunner runner = new TransactionRunner(env);
-		try {
-			// open and access the database within a transaction
-			KeyValueDatabaseRemove writer = new KeyValueDatabaseRemove(this,
-					table, row, column);
-			// KeyValueDatabaseReader reader = new KeyValueDatabaseReader(this);
-			try {
-				runner.run(writer);
-				// runner.run(reader);
-			} catch (DatabaseException e) {
-				log.error("Database run failed!", e);
-			} catch (Exception e) {
-				log.error("Database run failed!", e);
-			}
-		} finally {
-			// close the database outside the transaction
-			try {
-				// TODO Auto-generated catch block
-				// this.close();
-			} catch (Exception e) {
-				log.error("Database run failed!", e);
-			}
-		}
-
-	}
-
-	public void actionRemoveAllKeys() {
-		if (databaseOpen == false) {
-			openDatabase();
-		}
-
-		TransactionRunner runner = new TransactionRunner(env);
-		try {
-			// open and access the database within a transaction
-			KeyValueDatabaseRemoveAll writer = new KeyValueDatabaseRemoveAll(
-					this);
-			// KeyValueDatabaseReader reader = new KeyValueDatabaseReader(this);
-			try {
-				runner.run(writer);
-				// runner.run(reader);
-			} catch (DatabaseException e) {
-				log.error("Database run failed!", e);
-			} catch (Exception e) {
-				log.error("Database run failed!", e);
-			}
-		} finally {
-			// close the database outside the transaction
-			try {
-				// TODO Auto-generated catch block
-				// this.close();
-			} catch (Exception e) {
-				log.error("Database run failed!", e);
-			}
-		}
-	}
-
+	
 	public static void loadMemberDataFile(KeyValueDatabase database,
 			String tableName, String fileName) {
 		try {
@@ -821,11 +724,10 @@ public class KeyValueDatabase {
 				} else {
 					log.trace("Line:" + thisLine);
 					if (mg.length > 2) {
-						database.actionAddKey(tableName, mg[1], "key", "1");
+						database.new WriterBuilder().table(tableName).row(mg[1]).column("key").value("").go();
 						int i = 0;
 						for (String m : mg) {
-							database.actionAddKey(tableName, mg[1],
-									headerNames.get(i), m);
+							database.new WriterBuilder().table(tableName).row(mg[1]).column(headerNames.get(i)).value(m).go();
 							i++;
 						}
 					}
@@ -869,10 +771,9 @@ public class KeyValueDatabase {
 			String leftTable, String rightTable) {
 		List<String> lines = new ArrayList<String>();
 
-		List<List<String>> left = database.actionAllKeysByTableByColumn(
-				leftTable, "key");
-		List<List<String>> right = database.actionAllKeysByTableByColumn(
-				rightTable, "key");
+		List<List<String>> left = database.new ReaderBuilder().table(leftTable).column("key").go();
+		
+		List<List<String>> right = database.new ReaderBuilder().table(rightTable).column("key").go();
 
 		List<String> leftKeyTypeOnly = new ArrayList<String>();
 		for (List<String> leftRow : left) {
@@ -899,10 +800,7 @@ public class KeyValueDatabase {
 				log.debug(name + " --Added");
 			}
 		}
-
-		// for ( int i=0; i<13; i++) {
-		// log.trace(leftKeyTypeOnly.get(i));
-		// }
+		
 		return lines;
 	}
 
@@ -930,11 +828,95 @@ public class KeyValueDatabase {
 
 	private static InputStream getInfoBody(String USR, String PWD)
 			throws ClientProtocolException, IOException {
+		/* WARNING: https requires that the SSL certificates served by the server
+	       * be located in the local trust store otherwise request will fail with 
+	       * a certificate exception.
+	       */
+	       String authUrl = "https://lds.org/login.html"; 
+	       HttpClient client = new HttpClient();
+	       client.getParams().setCookiePolicy(CookiePolicy.BROWSER_COMPATIBILITY);
+	 
+	       PostMethod auth = new PostMethod(authUrl);
+	       auth.addParameter("username", USR);
+	       auth.addParameter("password", PWD);
+	 
+	       auth.setFollowRedirects(false);
+	       int respCode = client.executeMethod(auth);
+	       //Header location = auth.getResponseHeader("location");
+	       Header cookieHrd = auth.getResponseHeader("set-cookie");
+	 
+	       System.out.println("called: " + authUrl);
+	       System.out.println("response: " + respCode);
+	       //System.out.println("location: " + location.toExternalForm());
+	 
+	 
+	       HeaderElement[] elements = cookieHrd.getElements();
+	       for (int i=0; elements != null && i<elements.length; i++) {
+	           System.out.println("Received set-cookie: " + elements[i].getName() + "=" 
+	                   + elements[i].getValue());
+	       }
+	       String value = cookieHrd.getValue();
+	       String[] parts = value.split(";");
+	       String ssoToken = parts[0].split("=")[1];
+	 
+	       System.out.println("ssoToken: " + ssoToken);
+	       System.out.println();
+	 
+	       if (respCode != 200) {
+	           System.out.println("--Auth failed--");
+	           return null;
+	       }
+	 
+	       // ------ now access restricted resource -------
+	 
+	       long curr = System.currentTimeMillis();
+	       GregorianCalendar cal = new GregorianCalendar();
+	       cal.set(cal.get(GregorianCalendar.YEAR),
+	           cal.get(GregorianCalendar.MONTH),
+	           cal.get(GregorianCalendar.DATE),
+	           0,  // hours
+	           0,  // minutes
+	           0); // seconds
+	       long startOfToday = cal.getTimeInMillis();
+	       long totalDaysDesired = 30;
+	       long daysOut = startOfToday + totalDaysDesired * 24L * 60L * 60L * 1000L;
+	 
+	       String uri = "https://www.lds.org/directory/services/ludrs/unit/member-list/200239/csv";
+	       System.out.println("calling: " + uri);
+	 
+	       HttpMethod method = new GetMethod(uri);
+	       method.addRequestHeader("cookie", "ObSSOCookie=" + ssoToken);
+	       method.setFollowRedirects(false);
+	       int status = client.executeMethod(method);
+	       InputStream body = method.getResponseBodyAsStream();
+	       Header ctype = method.getResponseHeader("content-type");
+	       String val = ctype.getValue();
+	       System.out.println("Content-Type: " + val);
+	 
+	       // now convert to characters. utf-8 is specified due to the content type 
+	       // header's specified charset, should actually parse and used that but
+	       // I'll take a short cut for now
+	       //InputStreamReader reader = new InputStreamReader(body, "utf-8");
+	       //char[] chars = new char[1024];
+	       //int charsRead = reader.read(chars);
+	       //StringWriter sw = new StringWriter();
+	 
+	       //while (charsRead != -1) {
+	       //    sw.write(chars, 0, charsRead);
+	       //    charsRead = reader.read(chars);
+	       //}
+	 
+	       //System.out.println(sw.toString());
+		
+		return body;
+		
+		
 		/*
 		 * WARNING: https requires that the SSL certificates served by the
 		 * server be located in the local trust store otherwise request will
 		 * fail with a certificate exception.
 		 */
+		/*
 
 		String authUrl = "https://www.lds.org/login.html";
 		DefaultHttpClient authClient = new DefaultHttpClient();
@@ -957,6 +939,7 @@ public class KeyValueDatabase {
 		HttpHost AuthTargetHost = new HttpHost("lds.org");
 		HttpResponse AuthHttpResponse = authClient
 				.execute(AuthTargetHost, auth);
+		
 
 		// int respCode = client.executeMethod(auth);
 		// Header location = auth.getResponseHeader("location");
@@ -1019,6 +1002,17 @@ public class KeyValueDatabase {
 
 		System.out.println("calling: " + uri);
 
+		HttpMethod method = new GetMethod(uri);
+		method.addRequestHeader("cookie", "ObSSOCookie=" + ssoToken);
+		method.setFollowRedirects(false);
+		int status = authClient.executeMethod(method);
+		InputStream body = method.getResponseBodyAsStream();
+		Header ctype = method.getResponseHeader("content-type");
+		String val = ctype.getValue();
+		System.out.println("Content-Type: " + val);
+	       
+	       /*
+		
 		HttpGet method = new HttpGet(uri);
 		// method.addHeader("cookie", "ObSSOCookie=" + ssoToken);
 
@@ -1029,8 +1023,8 @@ public class KeyValueDatabase {
 		client.setCookieStore(authClient.getCookieStore());
 
 		HttpHost targetHost = new HttpHost("www.lds.org");
-		HttpResponse httpResponse = client.execute(targetHost, method);
-
+		HttpResponse httpResponse = client.execute(targetHost, method); 
+		
 		// int status = client.executeMethod(method);
 		// InputStream body = method.getResponseBodyAsStream();
 		InputStream body = httpResponse.getEntity().getContent();
@@ -1038,8 +1032,12 @@ public class KeyValueDatabase {
 		// String val = ctype.
 		// System.out.println("Content-Type: " + val);
 		// return null;
+		 
+		 
 
 		return body;
+		
+		*/
 	}
 
 	public static void loadMemberDataFileSimple(KeyValueDatabase database,
@@ -1063,12 +1061,11 @@ public class KeyValueDatabase {
 				log.warn(thisLine);
 				String[] fields = thisLine.split(":");
 				String[] lastfield = { "" };
-				if (fields[4].length() != 4) {
-					lastfield = fields[4].split("<br>");
+				if (fields[5].length() != 5) {
+					lastfield = fields[5].split("<br>");
 				}
-
-				database.actionAddKey(fields[0], fields[1], fields[2],
-						fields[3], lastfield[0]);
+				
+				database.new WriterBuilder().table(fields[0]).row(fields[1]).column(fields[2]).time(fields[3]).value(fields[4]).data(lastfield[0]).go();
 			}
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -1084,36 +1081,5 @@ public class KeyValueDatabase {
 			}
 		}
 
-	}
-
-	public void actionAddKey(String table, String row, String column,
-			String timeStamp, String value) {
-		if (databaseOpen == false) {
-			openDatabase();
-		}
-
-		TransactionRunner runner = new TransactionRunner(env);
-		try {
-			// open and access the database within a transaction
-			KeyValueDatabaseSimpleWrite writer = new KeyValueDatabaseSimpleWrite(
-					this, table, row, column, timeStamp, value);
-			// KeyValueDatabaseReader reader = new KeyValueDatabaseReader(this);
-			try {
-				runner.run(writer);
-				// runner.run(reader);
-			} catch (DatabaseException e) {
-				log.error("Database run failed!", e);
-			} catch (Exception e) {
-				log.error("Database run failed!", e);
-			}
-		} finally {
-			// close the database outside the transaction
-			try {
-				// TODO Auto-generated catch block
-				// this.close();
-			} catch (Exception e) {
-				log.error("Database run failed!", e);
-			}
-		}
 	}
 }

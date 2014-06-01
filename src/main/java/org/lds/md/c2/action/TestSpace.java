@@ -1,4 +1,4 @@
-package org.lds.md.c2;
+package org.lds.md.c2.action;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -16,6 +16,7 @@ import org.apache.http.client.params.ClientPNames;
 import org.apache.http.client.params.CookiePolicy;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.lds.md.c2.web.BeanRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
@@ -132,7 +133,7 @@ public class TestSpace implements BeanRequest, DisposableBean,
 		return parms;
 	}
 
-	private void getElggPage(String username, String password)
+	public void getElggPage(String username, String password)
 			throws IOException, ClientProtocolException {
 		String authUrl = "http://elgg-columbia2nd.rhcloud.com/services/api/rest/xml/?method=auth.gettoken";
 		DefaultHttpClient authClient = new DefaultHttpClient();
